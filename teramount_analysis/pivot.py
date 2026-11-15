@@ -25,6 +25,8 @@ from scipy import ndimage
 
 from .config import Config
 from .errors import ElementNotFoundError
+from .fitting import PlaneFit, fit_plane, fit_plane_robust
+from .frame import Frame
 from .surface import flat_mask
 
 _EIGHT_CONNECTED = np.ones((3, 3), dtype=bool)
@@ -152,6 +154,69 @@ def find_plane1(z_seg: np.ndarray, plane2: np.ndarray, config: Config) -> np.nda
             return labels == k
         rejected.add(k)
     raise ElementNotFoundError("plane 1 not found below the ramp")
+
+
+@dataclass(frozen=True)
+class PivotResult:
+    """Pivot plane heights (leveled, base = 0) and their difference."""
+
+    height_diff_um: float  # plane 2 - plane 1, crosses excluded [µm]
+    height_diff_with_crosses_um: float  # same with cross pixels kept (for comparison) [µm]
+    plane1_level_um: float  # plane 1 height at the plane-2 centroid [µm]
+    plane2_level_um: float  # plane 2 height at the plane-2 centroid [µm]
+    plane1_rms_um: float  # plane-1 fit residual (flatness / noise) [µm]
+    plane2_rms_um: float  # plane-2 fit residual [µm]
+    parallelism_deg: float  # angle between the two plane normals [deg]
+
+
+def measure_pivot(z_leveled: np.ndarray, frame: Frame, regions: PivotRegions,
+                  cross1_mask: np.ndarray | None, cross2_mask: np.ndarray | None,
+                  config: Config) -> PivotResult:
+    """Fit both planes on the original pixels and measure their height difference.
+
+    Each plane is fitted (robustly) to its pixels minus a thin edge margin and
+    minus the cross: the cross is an etched mark, not part of the surface, and
+    including it would pull the plane down. The difference is evaluated at the
+    plane-2 centroid, so any residual tilt common to both planes cancels.
+
+    Raises
+    ------
+    FitError
+        If a plane has too few valid pixels.
+    """
+    p = config.pixel_size_um
+    margin = max(int(round(config.px(config.plane_edge_margin_um))), 1)
+    u_all, v_all = frame.canonical_coordinates()
+    finite = np.isfinite(z_leveled)
+
+    def points(mask_canonical: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        rr, cc = np.nonzero(frame.pull_back(mask_canonical) & finite)
+        return u_all[rr, cc] * p, v_all[rr, cc] * p, z_leveled[rr, cc]
+
+    def fits(plane: np.ndarray, cross: np.ndarray | None) -> tuple[PlaneFit, PlaneFit]:
+        core = ndimage.binary_erosion(plane, iterations=margin)
+        if not core.any():
+            core = plane
+        cross_zone = (ndimage.binary_dilation(cross, iterations=2) if cross is not None
+                      else np.zeros_like(plane))
+        robust = fit_plane_robust(*points(core & ~cross_zone))
+        naive = fit_plane(*points(core | cross_zone))  # no clipping: the cross stays in
+        return robust, naive
+
+    fit1, naive1 = fits(regions.plane1, cross1_mask)
+    fit2, naive2 = fits(regions.plane2, cross2_mask)
+    uc, vc = (c * p for c in regions.plane2_centroid_uv)
+    level1, level2 = float(fit1.evaluate(uc, vc)), float(fit2.evaluate(uc, vc))
+    cos_angle = float(np.clip(fit1.normal() @ fit2.normal(), -1.0, 1.0))
+    return PivotResult(
+        height_diff_um=level2 - level1,
+        height_diff_with_crosses_um=float(naive2.evaluate(uc, vc) - naive1.evaluate(uc, vc)),
+        plane1_level_um=level1,
+        plane2_level_um=level2,
+        plane1_rms_um=fit1.rms,
+        plane2_rms_um=fit2.rms,
+        parallelism_deg=math.degrees(math.acos(cos_angle)),
+    )
 
 
 def segment_pivot(z_seg: np.ndarray, config: Config) -> PivotRegions:
