@@ -82,8 +82,13 @@ class XpanderResult:
 _not_found = XpanderResult.not_found
 
 
-def _apex_seed(zs: np.ndarray, regions: PivotRegions, config: Config) -> tuple[float, float]:
-    """First prominent peak above the Pivot on the axis, refined locally."""
+def _apex_seed(zs: np.ndarray, regions: PivotRegions, config: Config,
+               valid: np.ndarray | None = None) -> tuple[float, float]:
+    """First prominent peak above the Pivot on the axis, refined locally.
+
+    ``valid`` (canonical mask of measured pixels) stops the walk where the data
+    ends, so extrapolated corners of a rotated scan are never searched.
+    """
     u = int(round(regions.axis_u))
     top = int(np.nonzero(regions.plane1.any(axis=1))[0].min())
     start = top - 5
@@ -91,19 +96,27 @@ def _apex_seed(zs: np.ndarray, regions: PivotRegions, config: Config) -> tuple[f
     if start <= 0:
         raise ElementNotFoundError("no room above the Pivot for an Xpander")
     rows = np.arange(start, stop, -1)  # walking away from the Pivot
+    reached_edge = stop == -1
+    if valid is not None and not valid[rows, u].all():
+        rows = rows[:int(np.argmin(valid[rows, u]))]
+        reached_edge = True
     peaks, _ = find_peaks(zs[rows, u], prominence=config.xpander_min_prominence_um)
     if len(peaks) == 0:
-        raise ElementNotFoundError("Xpander apex not found (no prominent dome above the Pivot)")
+        limit = ("the image border" if reached_edge
+                 else f"{config.xpander_search_um:g} um above the Pivot")
+        raise ElementNotFoundError(f"no prominent dome between the Pivot and {limit}")
     v = int(rows[peaks[0]])
     half = int(round(config.px(config.xpander_refine_um)))
     r0, c0 = max(v - half, 0), max(u - half, 0)
     window = zs[r0:v + half + 1, c0:u + half + 1]
+    if valid is not None:
+        window = np.where(valid[r0:v + half + 1, c0:u + half + 1], window, -np.inf)
     dv, du = np.unravel_index(int(np.argmax(window)), window.shape)
     return float(c0 + du), float(r0 + dv)
 
 
-def locate_apex(z_canonical: np.ndarray, regions: PivotRegions, config: Config
-                ) -> tuple[float, float]:
+def locate_apex(z_canonical: np.ndarray, regions: PivotRegions, config: Config,
+                valid: np.ndarray | None = None) -> tuple[float, float]:
     """Canonical ``(u, v)`` seed of the Xpander apex.
 
     Raises
@@ -111,16 +124,25 @@ def locate_apex(z_canonical: np.ndarray, regions: PivotRegions, config: Config
     ElementNotFoundError
         If no prominent dome lies above the Pivot.
     """
-    return _apex_seed(smooth(z_canonical, config.px(config.xpander_smooth_um)), regions, config)
+    return _apex_seed(smooth(z_canonical, config.px(config.xpander_smooth_um)), regions, config,
+                      valid)
 
 
-def boundary_distances(z_smooth: np.ndarray, apex_uv: tuple[float, float], config: Config
-                       ) -> np.ndarray:
+def boundary_rays(z_smooth: np.ndarray, apex_uv: tuple[float, float], config: Config,
+                  valid: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Distance (px) from the apex to the dome boundary along each ray.
 
     A ray stops where the slope exceeds ``xpander_steep_slope`` (a step), where
     the height rises ``xpander_ray_rise_um`` above its running minimum (the
-    valley to a neighbouring dome is behind), or at the image border.
+    valley to a neighbouring dome is behind), or where the measured data ends:
+    the image border, or a canonical pixel outside the original scan (``valid``
+    False, the extrapolated corners of a rotated scan).
+
+    Returns
+    -------
+    (distances, at_edge)
+        Ray lengths in pixels, and for each ray whether it ended at the edge of
+        the data rather than at the dome boundary.
     """
     u0, v0 = apex_uv
     rows, cols = z_smooth.shape
@@ -128,17 +150,30 @@ def boundary_distances(z_smooth: np.ndarray, apex_uv: tuple[float, float], confi
     r = np.arange(1, rmax + 1, dtype=np.float64)
     grad = slope(z_smooth, config.pixel_size_um)
     out = np.empty(config.xpander_ray_count)
+    at_edge = np.zeros(config.xpander_ray_count, dtype=bool)
     for i, a in enumerate(np.linspace(0, 2 * np.pi, config.xpander_ray_count, endpoint=False)):
         ui = np.rint(u0 + r * math.cos(a)).astype(np.intp)
         vi = np.rint(v0 + r * math.sin(a)).astype(np.intp)
         inside = (ui >= 0) & (ui < cols) & (vi >= 0) & (vi < rows)
+        if valid is not None:
+            inside[inside] = valid[vi[inside], ui[inside]]
         n_in = int(np.argmin(inside)) if not inside.all() else rmax
         h = z_smooth[vi[:n_in], ui[:n_in]]
         prev_min = np.minimum.accumulate(np.r_[h[:1], h[:-1]]) if n_in else h
         stop = (grad[vi[:n_in], ui[:n_in]] > config.xpander_steep_slope) | (
             h > prev_min + config.xpander_ray_rise_um)
-        out[i] = r[int(np.argmax(stop))] if stop.any() else (r[n_in - 1] + 1 if n_in else 1.0)
-    return out
+        if stop.any():
+            out[i] = r[int(np.argmax(stop))]
+        else:
+            out[i] = r[n_in - 1] + 1 if n_in else 1.0
+            at_edge[i] = n_in < rmax
+    return out, at_edge
+
+
+def boundary_distances(z_smooth: np.ndarray, apex_uv: tuple[float, float], config: Config,
+                       valid: np.ndarray | None = None) -> np.ndarray:
+    """Ray lengths (px) from the apex to the dome boundary; see :func:`boundary_rays`."""
+    return boundary_rays(z_smooth, apex_uv, config, valid)[0]
 
 
 @dataclass(frozen=True, eq=False)
@@ -179,28 +214,38 @@ def measure_xpander(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray
     """
     p = config.pixel_size_um
     zs = smooth(z_canonical, config.px(config.xpander_smooth_um))
+    valid = frame.canonical_valid()  # False on extrapolated corners of a rotated scan
     try:
-        u0, v0 = _apex_seed(zs, regions, config)
+        u0, v0 = _apex_seed(zs, regions, config, valid)
     except ElementNotFoundError as exc:
         return _not_found(str(exc))
 
-    def aperture_radius(u: float, v: float) -> float:
-        shortest_ray = float(boundary_distances(zs, (u, v), config).min())
-        return config.xpander_aperture_fraction * shortest_ray
+    def aperture(u: float, v: float) -> tuple[float, str]:
+        """Aperture radius (px), and why it is too small ("" when usable)."""
+        dist, at_edge = boundary_rays(zs, (u, v), config, valid)
+        shortest = int(np.argmin(dist))
+        radius = config.xpander_aperture_fraction * float(dist[shortest])
+        if radius >= config.px(config.xpander_min_aperture_um):
+            return radius, ""
+        size = f"aperture {config.um(radius):.1f} um < {config.xpander_min_aperture_um:g} um"
+        if at_edge[shortest]:
+            return radius, f"dome cut by the image border ({size})"
+        return radius, f"a neighbouring dome or a step is too close to the apex ({size})"
 
     try:
         for _ in range(config.xpander_fit_iterations):
-            radius = aperture_radius(u0, v0)
-            if radius < config.px(config.xpander_min_aperture_um):
-                return _not_found("aperture too small (dome cut by border or neighbour)")
+            radius, problem = aperture(u0, v0)
+            if problem:
+                return _not_found(problem)
             q = _fit(_select(z_leveled, frame, u0, v0, radius), p)
             du0, dv0 = q.vertex()
             if math.hypot(du0, dv0) / p > radius / 2:
-                return _not_found("apex unstable")
+                return _not_found("apex unstable: the fitted vertex is more than half the "
+                                  "aperture away from the apex")
             u0, v0 = u0 + du0 / p, v0 + dv0 / p
-        radius = aperture_radius(u0, v0)
-        if radius < config.px(config.xpander_min_aperture_um):
-            return _not_found("aperture too small (dome cut by border or neighbour)")
+        radius, problem = aperture(u0, v0)
+        if problem:
+            return _not_found(problem)
         ap = _select(z_leveled, frame, u0, v0, radius)
         q = _fit(ap, p)
         return _summarise(q, ap, frame, regions, u0, v0, radius, config)

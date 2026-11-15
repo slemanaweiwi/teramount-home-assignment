@@ -26,6 +26,24 @@ def test_canonical_image_matches_to_canonical(phi, k):
     assert (cx, cy) == pytest.approx(f.to_canonical(140.0, 60.0), abs=0.15)
 
 
+@pytest.mark.parametrize("k", [0, 1, 2, 3])
+def test_canonical_valid_everywhere_without_fine_rotation(k):
+    f = Frame((300, 200), 0.0, k)
+    assert f.canonical_valid().shape == f.canonical_shape and f.canonical_valid().all()
+
+
+@pytest.mark.parametrize("phi,k", [(10.0, 0), (-8.0, 1)])
+def test_canonical_valid_excludes_extrapolated_corners(phi, k):
+    f = Frame((300, 200), phi, k)
+    valid = f.canonical_valid()
+    v, u = np.indices(f.canonical_shape, dtype=float)
+    x, y = f.to_original(u, v)
+    inside = (x >= 0) & (x <= 199) & (y >= 0) & (y <= 299)
+    assert valid.shape == f.canonical_shape and 0.8 < valid.mean() < 0.95
+    assert not valid[0, 0] and not valid[-1, -1] and valid[150 if k % 2 == 0 else 100, 100]
+    assert (valid == inside).mean() > 0.999  # equal except on the boundary itself
+
+
 def test_rotation_deg_normalised():
     assert Frame((10, 10), 1.0, 2).rotation_deg == pytest.approx(-179.0)
     assert Frame((10, 10), 0.0, 2).rotation_deg == pytest.approx(180.0)

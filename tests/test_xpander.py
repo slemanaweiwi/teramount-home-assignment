@@ -8,6 +8,7 @@ from helpers import prepare, run_xpander
 from synthetic import make_scan
 
 from teramount_analysis.config import Config
+from teramount_analysis.frame import Frame
 from teramount_analysis.surface import smooth
 from teramount_analysis.xpander import boundary_distances
 
@@ -49,6 +50,22 @@ def test_boundary_stops_at_the_valley_to_the_neighbour():
     assert d.min() * 0.252 == pytest.approx(63.0, rel=0.05)
 
 
+@pytest.mark.parametrize("phi, offset", [(9.0, -62.0), (-9.0, 62.0)])
+def test_aperture_stays_inside_the_measured_data(phi, offset):
+    # Near a corner of a rotated scan the canonical image is extrapolated: the
+    # rays that size the aperture must stop where the measured data ends.
+    z, _ = make_scan(rotation_deg=phi, channel_offset_um=offset)
+    x = run_xpander(z, phi)
+    assert x.found, x.reason
+    a = np.linspace(0, 2 * np.pi, 720, endpoint=False)
+    rad = x.aperture_radius_um / 0.252
+    xs, ys = Frame(z.shape, phi, 0).to_original(x.apex_u_px + rad * np.cos(a),
+                                                x.apex_v_px + rad * np.sin(a))
+    h, w = z.shape
+    assert xs.min() >= 0 and ys.min() >= 0 and xs.max() <= w - 1 and ys.max() <= h - 1
+    assert x.rx_um == pytest.approx(820, rel=0.005) and x.ry_um == pytest.approx(840, rel=0.005)
+
+
 def test_sphere_cap_cross_checks():
     z, _ = make_scan(dome="sphere", rx_um=830, ry_um=830)
     x = run_xpander(z, 0.0)
@@ -76,6 +93,19 @@ def test_fit_failure_in_summary_is_reported_not_raised(monkeypatch):
     z, _ = make_scan()
     x = run_xpander(z, 0.0)
     assert not x.found and "vertex" in x.reason
+
+
+def test_dome_cut_by_border_reason_names_the_border():
+    # Apex 32 µm below the top edge: prominent, but the border limits the aperture.
+    z, _ = make_scan(crop_top_um=48.0)
+    x = run_xpander(z, 0.0, Config(xpander_min_aperture_um=30.0))
+    assert not x.found and "border" in x.reason and "neighbour" not in x.reason
+
+
+def test_neighbour_too_close_reason_names_the_neighbour():
+    z, _ = make_scan()  # the valley to the next dome is 63 µm away: aperture 50 µm
+    x = run_xpander(z, 0.0, Config(xpander_min_aperture_um=60.0))
+    assert not x.found and "neighbour" in x.reason and "border" not in x.reason
 
 
 def test_dome_cut_by_border_is_not_found():

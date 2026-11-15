@@ -100,6 +100,23 @@ class Frame:
         return np.ascontiguousarray(np.rot90(out, self.quarter_turns))
 
     @cached_property
+    def _canonical_valid(self) -> np.ndarray:
+        v, u = np.indices(self.canonical_shape, dtype=np.float64)
+        x, y = self.to_original(u, v)
+        h, w = self.shape
+        eps = 1e-6  # tolerate rounding on the image edge itself
+        return (x >= -eps) & (x <= w - 1 + eps) & (y >= -eps) & (y <= h - 1 + eps)
+
+    def canonical_valid(self) -> np.ndarray:
+        """Canonical pixels that lie inside the original scan (cached).
+
+        After a fine rotation the corners of the canonical image fall outside
+        the scan; :meth:`canonical_image` fills them by extrapolation, so they
+        must not be treated as data.
+        """
+        return self._canonical_valid
+
+    @cached_property
     def _canonical_grid(self) -> tuple[np.ndarray, np.ndarray]:
         rows, cols = np.indices(self.shape, dtype=np.float64)
         return self.to_canonical(cols, rows)
