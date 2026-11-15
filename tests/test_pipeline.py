@@ -58,6 +58,26 @@ def test_clustered_nan_dropouts_are_tolerated():
     assert m["xpander_ry_um"] == pytest.approx(840, rel=0.003)
 
 
+@pytest.mark.parametrize("pixel_um", [0.35, 0.5])
+def test_other_pixel_sizes(pixel_um):
+    # The same field of view sampled more coarsely: every size is physical, so
+    # only --pixel-size changes. (0.75 deg is the hardest angle seen at coarse
+    # pixels: the edges are shorter than one sub-pixel phase cycle.)
+    shape = (round(302.4 / pixel_um), round(201.6 / pixel_um))
+    z, t = make_scan(shape=shape, pixel_size_um=pixel_um, rotation_deg=0.75)
+    cfg = Config(pixel_size_um=pixel_um)
+    r = analyse_scan(z, cfg)
+    m = r.metrics(cfg)
+    assert r.status == "ok" and not r.faults.faulty, (r.error, r.faults)
+    assert m["rotation_deg"] == pytest.approx(0.75, abs=0.05)
+    assert m["pivot_height_diff_um"] == pytest.approx(18.1, abs=0.02)
+    for n in (1, 2):  # sub-pixel, as at the provided resolution
+        assert (m[f"cross{n}_x_px"], m[f"cross{n}_y_px"]) == pytest.approx(
+            getattr(t, f"cross{n}_xy_px"), abs=0.3)
+    assert m["xpander_rx_um"] == pytest.approx(820, rel=0.003)
+    assert m["xpander_ry_um"] == pytest.approx(840, rel=0.003)
+
+
 def test_global_offset_does_not_change_results():
     z, _ = make_scan(rotation_deg=0.5)
     a = analyse_scan(z, Config()).metrics(Config())

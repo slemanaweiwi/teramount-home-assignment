@@ -192,7 +192,8 @@ def measure_pivot(z_leveled: np.ndarray, frame: Frame, regions: PivotRegions,
         If a plane has too few valid pixels.
     """
     p = config.pixel_size_um
-    margin = max(int(round(config.px(config.plane_edge_margin_um))), 1)
+    margin = config.whole_px(config.plane_edge_margin_um)
+    cross_margin = config.whole_px(config.cross_margin_um)
     u_all, v_all = frame.canonical_coordinates()
     finite = np.isfinite(z_leveled)
 
@@ -204,8 +205,8 @@ def measure_pivot(z_leveled: np.ndarray, frame: Frame, regions: PivotRegions,
         core = ndimage.binary_erosion(plane, iterations=margin)
         if not core.any():
             core = plane
-        cross_zone = (ndimage.binary_dilation(cross, iterations=2) if cross is not None
-                      else np.zeros_like(plane))
+        cross_zone = (ndimage.binary_dilation(cross, iterations=cross_margin)
+                      if cross is not None else np.zeros_like(plane))
         robust = fit_plane_robust(*points(core & ~cross_zone))
         naive = fit_plane(*points(core | cross_zone))  # no clipping: the cross stays in
         return robust, naive

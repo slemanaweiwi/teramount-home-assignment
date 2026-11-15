@@ -1,9 +1,17 @@
 """Analysis configuration.
 
-All tunable parameters live here, expressed in **physical units** (µm, µm²,
-µm/µm slopes, degrees) rather than pixels, so the same values work for scans
-of a different size or resolution. Use :meth:`Config.px` to convert a length to
-pixels at the point of use.
+All tunable parameters live here. Every size — of a feature, a search region
+or a filter — is in **physical units** (µm, µm², µm/µm slopes, degrees), so
+the same values work for scans of a different size or resolution: only
+``pixel_size_um`` changes. Lengths are converted to pixels at the point of use
+(:meth:`Config.px`, :meth:`Config.whole_px`, :meth:`Config.odd_px`).
+
+The one setting in pixels, ``rotation_max_line_rms_px``, is a sub-pixel
+precision limit, which is a property of the sampling, not of the chip. A few
+internal constants are pixel counts for the same reason (the Hough vote
+threshold, minimum pixel counts for a fit, 1-px de-noising before an argmax).
+Defaults given in µm that look odd (0.756, 1.26) are whole pixel counts at
+the provided 0.252 µm/px.
 """
 
 from __future__ import annotations
@@ -25,7 +33,7 @@ class Config:
     random_seed: int = 0  # seed for every random choice (RANSAC, Hough)
 
     # --- Segmentation surface ------------------------------------------------
-    seg_median_px: int = 5  # median pre-filter size [px] (suppresses spike noise)
+    seg_median_um: float = 1.26  # median pre-filter size [µm] (spike noise; 5 px)
     seg_sigma_um: float = 1.0  # Gaussian smoothing for segmentation [µm]
     flat_slope_max: float = 0.25  # max slope of a "flat" pixel [µm/µm]
 
@@ -41,7 +49,7 @@ class Config:
     rotation_canny_high: float = 1.5  # Canny high threshold [µm/px, Sobel units]
     rotation_min_line_um: float = 20.0  # shortest straight segment used [µm]
     rotation_line_gap_um: float = 0.75  # largest gap bridged inside a segment [µm]
-    rotation_profile_half_px: int = 6  # half-width of the edge profile [px]
+    rotation_profile_half_um: float = 1.5  # half-width of the edge profile [µm] (>= 6 px)
     rotation_max_line_rms_px: float = 0.25  # max straight-line fit residual [px]
     rotation_min_valid_fraction: float = 0.6  # min share of rows/cols with an edge hit
 
@@ -64,6 +72,9 @@ class Config:
     # --- Crosses -------------------------------------------------------------
     cross_polarity: str = "recessed"  # "recessed" (etched) or "raised"
     cross_min_depth_um: float = 0.6  # residual threshold for cross pixels [µm]
+    cross_median_um: float = 0.756  # median de-noising before the threshold [µm] (3 px)
+    cross_sigma_um: float = 0.252  # Gaussian de-noising before the threshold [µm] (1 px)
+    cross_margin_um: float = 0.5  # cross outline grown by this before plane fits [µm]
     cross_area_min_um2: float = 5.0  # cross area lower bound [µm²]
     cross_area_max_um2: float = 100.0  # cross area upper bound [µm²]
     cross_solidity_min: float = 0.75  # area / convex-hull area lower bound
@@ -127,3 +138,11 @@ class Config:
     def um(self, px: float) -> float:
         """Convert a lateral length from pixels to µm."""
         return px * self.pixel_size_um
+
+    def whole_px(self, um: float, minimum: int = 1) -> int:
+        """A length in whole pixels (rounded), at least ``minimum``."""
+        return max(minimum, int(round(self.px(um))))
+
+    def odd_px(self, um: float) -> int:
+        """A filter window in pixels: the nearest odd count (1 = no filtering)."""
+        return max(1, 2 * int(round((self.px(um) - 1) / 2)) + 1)

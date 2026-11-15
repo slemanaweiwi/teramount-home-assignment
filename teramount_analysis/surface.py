@@ -55,7 +55,8 @@ def slope(z: np.ndarray, pixel_size_um: float) -> np.ndarray:
 
 def segmentation_surface(z: np.ndarray, config: Config) -> np.ndarray:
     """NaN-free, median- and Gaussian-smoothed copy used to find regions."""
-    return smooth(fill_invalid(z)[0], config.px(config.seg_sigma_um), config.seg_median_px)
+    return smooth(fill_invalid(z)[0], config.px(config.seg_sigma_um),
+                  config.odd_px(config.seg_median_um))
 
 
 def flat_mask(z_seg: np.ndarray, config: Config) -> np.ndarray:

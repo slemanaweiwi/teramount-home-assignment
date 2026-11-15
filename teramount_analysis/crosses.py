@@ -49,9 +49,16 @@ NOT_FOUND = CrossResult(False, *([float("nan")] * 8), None)
 
 
 def _candidates(residual: np.ndarray, hull: np.ndarray, config: Config) -> list:
-    """Cross-shaped components of the thresholded residual (crop coordinates)."""
-    smoothed = ndimage.gaussian_filter(ndimage.median_filter(np.where(hull, residual, 0.0), 3),
-                                       1.0)
+    """Cross-shaped components of the thresholded residual (crop coordinates).
+
+    The residual is de-noised with physical-size filters: in pixels, a fixed
+    window would round the plus sign into a blob on coarser scans.
+    """
+    smoothed = np.where(hull, residual, 0.0)
+    median = config.odd_px(config.cross_median_um)
+    if median > 1:
+        smoothed = ndimage.median_filter(smoothed, median)
+    smoothed = ndimage.gaussian_filter(smoothed, config.px(config.cross_sigma_um))
     if config.cross_polarity == "recessed":
         cand = hull & (smoothed < -config.cross_min_depth_um)
     else:
@@ -97,7 +104,8 @@ def find_cross(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray,
     c0, c1 = max(cols.min() - 3, 0), min(cols.max() + 4, plane_mask.shape[1])
     crop = (slice(r0, r1), slice(c0, c1))
     z = z_canonical[crop]
-    fit_px = ndimage.binary_erosion(plane_mask[crop], iterations=2)
+    fit_px = ndimage.binary_erosion(plane_mask[crop],
+                                    iterations=config.whole_px(config.plane_edge_margin_um))
     vv, uu = np.nonzero(fit_px)
     try:
         plane = fit_plane_robust(uu + c0, vv + r0, z[vv, uu])
