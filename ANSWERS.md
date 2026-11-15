@@ -53,9 +53,10 @@ works wherever the channel sits in the image.
    them. RANSAC is needed because the structures cover a large part of the
    image, and an ordinary fit would be pulled up by them. A robust
    least-squares fit then refines that plane, and it is subtracted.
-2. **Map the flat regions.** On a smoothed copy (median 5 px, then Gaussian
-   1 µm), every pixel with slope below 0.25 µm/µm is "flat". The smoothing
-   matters on noisy elements: without it, noise breaks a plateau into specks.
+2. **Map the flat regions.** On a smoothed copy (median 1.26 µm, i.e. 5 px,
+   then Gaussian 1 µm), every pixel with slope below 0.25 µm/µm is "flat".
+   The smoothing matters on noisy elements: without it, noise breaks a
+   plateau into specks.
 3. **Plane 2** (the Pivot's top plane) is the **highest flat plateau lying
    completely inside the image**.
    - Plateaus that touch the border belong to the neighbouring channels, which
@@ -222,7 +223,8 @@ to the apex:
 **4. Cross-checks** (all in the CSV):
 
 - **Principal radii:** the eigenvalues of the Hessian [[2c3, c5], [c5, 2c4]],
-  and their direction.
+  and their direction (the angle of R1 from the chip x axis, counter-clockwise
+  like the rotation angle).
 - **Exact sphere fit** (geometric least squares): within **0.09 %** of
   (Rx+Ry)/2 on every scan, which confirms the paraxial model.
 - **Circle fits to the single x and y profiles through the apex:** within
@@ -461,9 +463,10 @@ rotation.
    and the median ignores those outliers. Its standard error is
    1.25 × 1.4826 × MAD / √n.
 
-**Orientation.** The fine search only covers ±10°. Coarse 90° turns are
-detected from the Pivot ramp direction (§1.1, step 4), so a scan rotated by
-90° or 180° is also handled.
+**Orientation.** The fine search only covers ±10° around each multiple of
+90°. Coarse 90° turns are detected from the Pivot ramp direction (§1.1,
+step 4), so a scan turned by 90°, 180° or 270° (plus up to ±10°) is also
+handled.
 
 **Measuring without interpolation.** A rotation-corrected ("canonical") copy
 of the scan is made only to *find* the elements. Every *measurement* (plane
@@ -609,11 +612,11 @@ Two refinements:
 - **File 13 — Xpander faulty (noisy).** Fit RMS **154 nm** (nRMS 10.6 %,
   R² 0.880), with the same grid texture. Radius 829.8/822.1 µm (twin
   829.1/822.7).
-  - This file also gets a *statistical* flag, `plane2_rms_um_outlier`.
-    Plane 2 is unusually *smooth* (20 nm against 22–25 nm), which is not a
-    defect.
-  - That is why statistical outliers are reported in their own column and do
-    not by themselves mark a file as faulty.
+  - Its plane 2 is unusually *smooth* (20 nm against 22–25 nm). That is not
+    a defect, so it is not flagged: for roughness and axis offsets the
+    statistical check only reports unusually high values.
+  - Statistical outliers are reported in their own column and never mark a
+    file as faulty by themselves: unusual is not the same as defective.
 - **Every other file passes** all geometric and nominal checks. The variant
   files 1, 12 and 14 behave as in dataset 1.
 
@@ -627,8 +630,9 @@ Details for each file: `results/fault_analysis.md`.
   and the pixel size is 0.252 µm (`--pixel-size`).
 - **Chip family.** The scans show the same chip family: a Pivot with a ramp,
   and an Xpander along the axis on the low-plane side.
-- **Rotation range.** Rotation is measured within ±10°, plus 90° turns.
-  Larger arbitrary rotations would need a wider search.
+- **Rotation range.** The fine rotation is measured within ±10° of a multiple
+  of 90°, and the quarter turn comes from the ramp direction. A rotation
+  further than 10° from a quarter turn would need a wider edge search.
 - **Nominal spec.** The nominal values (step 18.18 ± 0.30 µm, radius
   826 ± 30 µm) are estimated from the clean provided files. For another
   design they should come from the design spec (`--nominal-step`,

@@ -371,8 +371,11 @@ candidate's prompts verbatim, in order.
   are written alongside each module, not at the end.
 - **External review**: the design was also reviewed with ChatGPT. Accepted:
   labeling consistency check, independent rotation validation, separate fault
-  categories, dropping Hough and bootstrap. Not accepted: making principal
-  radii the primary result (the assignment asks for X/Y axes explicitly).
+  categories, dropping bootstrap. (Dropping Hough was accepted at first; after
+  data exploration Hough was kept, but only to propose candidate segments:
+  every angle comes from the sub-pixel re-measurement, see §7.2.) Not
+  accepted: making principal radii the primary result (the assignment asks
+  for X/Y axes explicitly).
 - **AI disclosure** lists both tools: Claude Code (exploration, design,
   implementation, tests, docs) and ChatGPT (design review); the candidate
   supplies the prompts they sent to ChatGPT.
@@ -382,4 +385,5 @@ candidate's prompts verbatim, in order.
 - Exact RANSAC vs IRLS choice, thresholds' default values (in µm), template
   details for the cross, figure styling.
 - Whether Hough or projection search is primary for rotation, as long as both
-  agree on the provided data.
+  agree on the provided data. *(Decided during the build: Hough candidates
+  plus sub-pixel re-measurement; the projection search was rejected, §7.2.)*

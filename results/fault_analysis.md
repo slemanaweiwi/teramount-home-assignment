@@ -53,7 +53,7 @@ reference.
 
 ## Task 2 — file 3.npy: Xpander noisy (faulty)
 
-**Flags:** `xpander_surface_noisy` (statistical `xpander_nrms_pct_outlier`).
+**Flags:** `xpander_surface_noisy` (statistical `xpander_rms_um_outlier`).
 
 - Fit RMS is 154 nm (nRMS 10.6 %, R² 0.880). The residual map shows a
   periodic grid texture.
@@ -81,16 +81,15 @@ RMS).
 
 ## Task 2 — file 13.npy: Xpander noisy (faulty)
 
-**Flags:** `xpander_surface_noisy`. Statistical flags:
-`xpander_nrms_pct_outlier` and `plane2_rms_um_outlier`.
+**Flags:** `xpander_surface_noisy` (statistical `xpander_rms_um_outlier`).
 
 - Fit RMS is 154 nm (nRMS 10.6 %, R² 0.880), with the same grid texture and
   the same ±0.40 µm bounds as task 2 file 3.
 - **Measurement:** Rx/Ry = 829.8 / 822.1 µm against 829.1 / 822.7 µm on the
   clean twin.
-- The `plane2_rms_um_outlier` flag is a *low* outlier. Plane 2 is unusually
-  smooth (20 nm against 22–25 nm), which is not a defect. It shows why
-  statistical flags alone do not mark a file as faulty.
+- Plane 2 is unusually *smooth* (20 nm against 22–25 nm). That is not a
+  defect, so it is not flagged: for roughness and axis offsets the
+  statistical check only reports unusually high values.
 
 ## Observations that are not faults
 

@@ -39,6 +39,11 @@ prompt.
    - Every number in `ANSWERS.md` was cross-checked against the CSVs.
    - A fresh clone of the repository was run from the README instructions.
    - A final independent code review was done.
+7. **Final polish.** At the candidate's request, the ten minor findings the
+   reviewer had left for later were addressed, each test-first. Nine were
+   fixed; one did not reproduce and got a regression test instead. The results
+   were then regenerated and compared cell by cell with the previous ones:
+   only the intended columns changed.
 
 ### ChatGPT's design review and what was done with it
 

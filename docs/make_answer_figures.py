@@ -30,8 +30,9 @@ def _load(task: int) -> list[dict[str, float]]:
     path = ROOT / "results" / f"task{task}_results.csv"
     with open(path, newline="", encoding="utf-8") as fh:
         rows = list(csv.DictReader(fh))
-    return [{k: (float(v) if v and k not in ("file", "status", "error") and not k.endswith(
-        ("flags", "faulty")) else v) for k, v in r.items()} for r in rows]
+    text = ("file", "status", "error", "warnings")
+    return [{k: (float(v) if v and k not in text and not k.endswith(("flags", "faulty"))
+                 else v) for k, v in r.items()} for r in rows]
 
 
 def rotation_figure(t1: list[dict], t2: list[dict]) -> None:
