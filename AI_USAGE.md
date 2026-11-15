@@ -61,7 +61,7 @@ in `docs/design.md` §12:
 
 ## Prompts — Claude Code
 
-The following prompts represent the instructions provided to Claude Code throughout the development of the Teramount Home Assignment. They have been professionally edited for clarity, structure, and technical precision while preserving the intent and sequence of the original interactions.
+The prompts below are all the messages the candidate sent to Claude Code during the assignment, in the order they were sent (15 November 2026). They have been rewritten in a clearer and more structured form, and some were expanded to state the request in full, so the wording is not verbatim. The ChatGPT conversation is linked in the next section.
 
 ### 1. Understanding the Company
 
@@ -156,7 +156,15 @@ Please optimize the implementation strategy for this situation. The final result
 
 Prioritize the essential requirements first and distinguish between must-have functionality and optional improvements.
 
-### 8. Finalizing the Design
+### 8. Evaluating ChatGPT's Design Review
+
+**Prompt:**
+
+While brainstorming, I asked ChatGPT to review the design document; its review is included below. What do you think of its feedback? Note that ChatGPT had only the design document, not the assignment itself.
+
+*(ChatGPT's full review was pasted here. Its recommendations, and what was done with each, are summarised in the table above.)*
+
+### 9. Finalizing the Design
 
 **Prompt:**
 
@@ -166,7 +174,7 @@ Update the design documentation to incorporate the accepted recommendations, res
 
 Before implementation, verify that the design, testing strategy, and deliverables are aligned.
 
-### 9. Starting the Implementation
+### 10. Starting the Implementation
 
 **Prompt:**
 
@@ -184,7 +192,7 @@ Preserve the modular architecture and avoid shortcuts that compromise correctnes
 
 Please also provide an estimate of the implementation time and identify the major remaining milestones.
 
-### 10. Requesting an Implementation Progress Update
+### 11. Requesting an Implementation Progress Update
 
 **Prompt:**
 
@@ -192,7 +200,7 @@ Please provide an updated estimate of the remaining implementation time.
 
 Summarize the completed tasks, the work currently in progress, the outstanding tasks, and any issues that could affect the delivery timeline.
 
-### 11. Requesting a Review Progress Update
+### 12. Requesting a Review Progress Update
 
 **Prompt:**
 
@@ -200,7 +208,7 @@ Please provide an update on the independent code review.
 
 How many issues have been identified, how many have been resolved, and what remains to be reviewed? Also, estimate how much time is needed to complete the review.
 
-### 12. Improving the AI Usage Documentation
+### 13. Improving the AI Usage Documentation
 
 **Prompt:**
 
@@ -210,10 +218,71 @@ Please prepare a professional and transparent AI usage section for `AI_USAGE.md`
 
 The documentation should describe how Claude Code contributed to the development process, including data exploration, technical design, implementation, testing, debugging, and documentation.
 
-Please present the prompts used during the interactions in a professional, well-structured format. Do not invent technical decisions or claim that suggestions were implemented unless they were actually accepted and used.
+Please present the prompts used during the interactions in a professional, well-structured format. Do not invent technical decisions or claim that suggestions were implemented unless they were actually accepted and used. I also used ChatGPT to brainstorm how to approach the problem, so it should be included as well.
 
----
+### 14. Providing the ChatGPT Conversation
 
+**Prompt:**
 
+Here is the link to the ChatGPT conversation: https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44. As I said, please present the prompts in a more professional way.
 
-</details>
+### 15. Checking the Project Status
+
+**Prompt:**
+
+What is the current status? Is the assignment complete, and what remains to be done?
+
+### 16. Final Fixes and Publication
+
+**Prompt:**
+
+Please merge the branch, create a GitHub repository, and fix the remaining minor issues. Take your time; I want the assignment to be as polished as possible.
+
+### 17. Note on AI_USAGE.md
+
+**Prompt:**
+
+I have edited `AI_USAGE.md` myself and saved it. Please take that into account.
+
+### 18. Confirming Completion
+
+**Prompt:**
+
+Are we done now?
+
+### 19. Resuming the Publication Step
+
+**Prompt:**
+
+I stopped the last step by accident. Please continue.
+
+### 20. Making the Repository Public
+
+**Prompt:**
+
+Please make the GitHub repository public.
+
+### 21. Robustness on Unseen Data
+
+**Prompt:**
+
+All the tests pass. Will the code also work on future test data that we do not have yet? Are you completely sure that we are done?
+
+### 22. AI_USAGE.md Edit and a Vercel Email
+
+**Prompt:**
+
+I edited `AI_USAGE.md` myself. Separately, I received an email from Vercel about a web page deployment. What is that?
+
+### 23. Correcting AI_USAGE.md
+
+**Prompt:**
+
+Please edit `AI_USAGE.md` so that it contains no errors.
+
+## Prompts — ChatGPT
+
+The full ChatGPT conversation (brainstorming and design review), with every
+prompt and reply:
+
+**https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44**
