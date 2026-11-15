@@ -207,6 +207,8 @@ def _summary_text(result: ScanResult, config: Config) -> str:
         "FLAGS",
         *textwrap.wrap(" geometric: " + (", ".join(faults.geometric) or "none"), 46),
         *textwrap.wrap(" nominal:   " + (", ".join(faults.nominal) or "none"), 46),
+        *(textwrap.wrap(" warnings:  " + ", ".join(result.warnings), 46)
+          if result.warnings else []),
         " statistical: see the CSV (needs the whole run)",
     ]
     return "\n".join(lines)

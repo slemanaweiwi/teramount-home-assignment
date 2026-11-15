@@ -51,10 +51,11 @@ def test_noisy_flag_uses_absolute_rms_not_aperture_relative():
     assert "xpander_surface_noisy" in geometric_flags(_result(xpander=rough), Config())
 
 
-def test_missing_planes_and_rotation_flagged():
+def test_missing_planes_flagged_but_not_unmeasured_rotation():
+    # An unmeasured rotation is reported as a warning by the pipeline, not as a fault.
     r = _result(rotation=None, pivot=None, cross1=None, cross2=None, xpander=None,
                 missing=("plane1",))
-    assert geometric_flags(r, Config()) == ("rotation_not_measured", "plane1_not_found")
+    assert geometric_flags(r, Config()) == ("plane1_not_found",)
 
 
 def test_geometry_violations_flagged():

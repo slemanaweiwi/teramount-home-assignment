@@ -31,10 +31,7 @@ STAT_METRICS: tuple[str, ...] = (
 
 def geometric_flags(result: ScanResult, config: Config) -> tuple[str, ...]:
     """Structural checks that need no reference values."""
-    flags: list[str] = []
-    if config.correct_rotation and result.rotation is None and result.frame is not None:
-        flags.append("rotation_not_measured")
-    flags += [f"{el}_not_found" for el in ("plane2", "plane1") if el in result.missing]
+    flags = [f"{el}_not_found" for el in ("plane2", "plane1") if el in result.missing]
     for n, cross in ((1, result.cross1), (2, result.cross2)):
         if cross is not None and not cross.found:
             flags.append(f"cross{n}_not_found")

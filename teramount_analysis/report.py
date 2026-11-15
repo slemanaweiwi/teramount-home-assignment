@@ -11,7 +11,7 @@ from .config import Config
 from .results import METRIC_COLUMNS, FaultReport, ScanResult
 
 CSV_COLUMNS: tuple[str, ...] = (
-    "file", "status", "error", *METRIC_COLUMNS,
+    "file", "status", "error", "warnings", *METRIC_COLUMNS,
     "geometric_flags", "nominal_flags", "statistical_flags", "faulty",
 )
 
@@ -35,7 +35,8 @@ def write_csv(results: Sequence[ScanResult], path: Path, config: Config) -> None
             faults = r.faults or FaultReport()
             faulty = "" if r.status == "failed" else ("yes" if faults.faulty else "no")
             writer.writerow([
-                r.file, r.status, r.error, *(_cell(metrics[c]) for c in METRIC_COLUMNS),
+                r.file, r.status, r.error, ";".join(r.warnings),
+                *(_cell(metrics[c]) for c in METRIC_COLUMNS),
                 ";".join(faults.geometric), ";".join(faults.nominal),
                 ";".join(faults.statistical), faulty,
             ])
@@ -54,7 +55,8 @@ def summary_table(results: Sequence[ScanResult], config: Config | None = None) -
     for r in results:
         m = r.metrics(config)
         faults = r.faults or FaultReport()
-        flags = ", ".join(faults.geometric + faults.nominal + faults.statistical)
+        flags = ", ".join(faults.geometric + faults.nominal + faults.statistical
+                          + tuple(f"warning: {w}" for w in r.warnings))
         lines.append(
             f"{r.file:<14}{r.status:<9}{num(m['pivot_height_diff_um'], '9.3f')}"
             f"{num(m['xpander_rx_um'], '9.1f')}{num(m['xpander_ry_um'], '9.1f')}"

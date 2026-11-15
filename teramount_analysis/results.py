@@ -71,6 +71,9 @@ class ScanResult:
     file: str
     status: str = "failed"  # "ok" | "partial" | "failed"
     error: str = ""  # reason for a failed or partial analysis
+    # Limits of the analysis that are not chip defects, e.g. "rotation_not_measured"
+    # (the scan was then analysed as unrotated). They never make a scan faulty.
+    warnings: tuple[str, ...] = ()
     tilt: TiltResult | None = None
     rotation: RotationResult | None = None  # None when not measured
     frame: Frame | None = None

@@ -83,11 +83,27 @@ def test_noisy_dome_is_faulty():
     assert "xpander_surface_noisy" in r.faults.geometric and r.faults.faulty
 
 
+def test_unmeasured_rotation_is_a_warning_not_a_fault(monkeypatch):
+    # Failing to measure the rotation is a limit of the analysis, not a chip defect.
+    import teramount_analysis.pipeline as pipeline_module
+    from teramount_analysis.errors import RotationError
+
+    def no_edges(*args, **kwargs):
+        raise RotationError("no straight edges found to measure the rotation")
+
+    monkeypatch.setattr(pipeline_module, "estimate_rotation", no_edges)
+    z, _ = make_scan()
+    r = analyse_scan(z, Config())
+    assert r.warnings == ("rotation_not_measured",)
+    assert r.status == "ok" and not r.faults.faulty, (r.error, r.faults)
+    assert "rotation_not_measured" not in r.faults.geometric
+
+
 def test_rotation_correction_can_be_disabled():
     z, _ = make_scan()
     r = analyse_scan(z, Config(correct_rotation=False))
     assert r.rotation is None and r.metrics(Config())["rotation_deg"] == 0.0
-    assert "rotation_not_measured" not in r.faults.geometric
+    assert r.warnings == () and not r.faults.faulty
 
 
 def test_unreadable_file_is_a_failed_row(tmp_path):

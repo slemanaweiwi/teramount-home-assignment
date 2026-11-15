@@ -39,6 +39,16 @@ def test_csv_header_and_values(tmp_path):
     assert rec2["error"] == "xpander not found: no dome"
 
 
+def test_warnings_column_is_separate_from_faults(tmp_path):
+    r = fake_result(warnings=("rotation_not_measured",), faults=FaultReport())
+    write_csv([r], tmp_path / "r.csv", Config())
+    header, row = _rows(tmp_path / "r.csv")
+    rec = dict(zip(header, row, strict=True))
+    assert header[:4] == ["file", "status", "error", "warnings"]
+    assert rec["warnings"] == "rotation_not_measured" and rec["faulty"] == "no"
+    assert "rotation_not_measured" in summary_table([r])
+
+
 def test_failed_row_written(tmp_path):
     bad = ScanResult(file="bad.npy", status="failed", error="cannot read", faults=FaultReport())
     write_csv([bad], tmp_path / "r.csv", Config())

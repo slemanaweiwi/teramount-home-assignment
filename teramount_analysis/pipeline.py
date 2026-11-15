@@ -76,8 +76,9 @@ def _run(z: np.ndarray, config: Config, result: ScanResult) -> None:
         try:
             result.rotation = estimate_rotation(z_leveled, config)
             phi = result.rotation.angle_deg
-        except RotationError as exc:
+        except RotationError as exc:  # a limit of the analysis, not a chip defect
             log.warning("%s: rotation not measured (%s); assuming 0 deg", result.file, exc)
+            result.warnings = (*result.warnings, "rotation_not_measured")
     result.frame = Frame(z.shape, phi, 0)
 
     z_seg = segmentation_surface(result.frame.canonical_image(z_leveled), config)
