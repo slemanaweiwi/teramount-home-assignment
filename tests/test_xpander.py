@@ -75,6 +75,16 @@ def test_sphere_cap_cross_checks():
     assert x.ry_profile_um == pytest.approx(830, rel=0.01)
 
 
+def test_sag_is_independent_of_tilt():
+    # The fit is re-centred on its own vertex, so its linear (tilt) terms vanish:
+    # the sag equals a²/(2 R1) for the fitted aperture even when the tilt is kept.
+    z, _ = make_scan(slope_x=0.02, slope_y=0.01)
+    x = run_xpander(z, 0.0, Config(correct_tilt=False))
+    assert x.found, x.reason
+    assert x.sag_um == pytest.approx(x.aperture_radius_um**2 / (2 * x.r1_um), rel=0.002)
+    assert x.rx_um == pytest.approx(820, rel=0.003) and x.ry_um == pytest.approx(840, rel=0.003)
+
+
 def test_noisy_dome_radius_unbiased_but_flagged_by_nrms():
     z, _ = make_scan(xpander_noise_um=0.2, rx_um=820, ry_um=840)
     x = run_xpander(z, 0.0)
