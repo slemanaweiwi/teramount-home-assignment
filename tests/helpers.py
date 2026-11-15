@@ -14,6 +14,7 @@ from teramount_analysis.frame import Frame
 from teramount_analysis.pivot import PivotResult, measure_pivot, segment_pivot
 from teramount_analysis.surface import segmentation_surface
 from teramount_analysis.tilt import fit_base_plane, remove_tilt
+from teramount_analysis.xpander import XpanderResult, measure_xpander
 
 
 def prepare(z: np.ndarray, phi: float, config: Config | None = None
@@ -51,3 +52,11 @@ def run_pivot(z: np.ndarray, phi: float, config: Config | None = None,
     c2 = find_cross(z_leveled, frame, z_canonical, reg.plane2, reg.axis_u, config)
     masks = (c1.mask, c2.mask) if use_cross_masks else (None, None)
     return measure_pivot(z_leveled, frame, reg, *masks, config)
+
+
+def run_xpander(z: np.ndarray, phi: float, config: Config | None = None) -> XpanderResult:
+    """Xpander measurement, using the known rotation ``phi``."""
+    config = config or Config()
+    z_leveled, frame, z_canonical, z_seg = prepare(z, phi, config)
+    reg = segment_pivot(z_seg, config)
+    return measure_xpander(z_leveled, frame, z_canonical, reg, config)
