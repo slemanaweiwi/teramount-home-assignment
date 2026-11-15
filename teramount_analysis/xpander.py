@@ -70,9 +70,13 @@ class XpanderResult:
     n_points: int  # pixels in the fit
     residual_map: np.ndarray | None  # canonical-frame residuals [µm], NaN elsewhere
 
+    @classmethod
+    def not_found(cls, reason: str) -> XpanderResult:
+        """Result for an Xpander that could not be measured."""
+        return cls(False, reason, *([_NAN] * 21), 0, None)
 
-def _not_found(reason: str) -> XpanderResult:
-    return XpanderResult(False, reason, *([_NAN] * 21), 0, None)
+
+_not_found = XpanderResult.not_found
 
 
 def _apex_seed(zs: np.ndarray, regions: PivotRegions, config: Config) -> tuple[float, float]:
