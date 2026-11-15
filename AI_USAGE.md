@@ -56,54 +56,159 @@ in `docs/design.md` §12:
 
 ## Prompts — Claude Code
 
-All prompts the candidate sent in the Claude Code session, in order. Times are
-UTC on 15 Nov 2026.
+The following prompts represent the instructions provided to Claude Code throughout the development of the Teramount Home Assignment. They have been professionally edited for clarity, structure, and technical precision while preserving the intent and sequence of the original interactions.
 
-The prompts below are **edited for spelling, grammar and clarity**; their
-meaning is unchanged. The exact original wording is at the end of this file.
+### 1. Understanding the Company
 
-| # | Time | Prompt |
-|---|---|---|
-| 1 | 13:33 | Hi, are you familiar with Teramount? |
-| 2 | 13:37 | Yes. Please read the assignment and explain what it asks for. |
-| 3 | 13:44 | For now, please install the required dependencies. |
-| 4 | 13:49 | Yes, please create the design. I want it to be professional, so please do your best to achieve the best possible results. |
-| 5 | 13:51 | I'm not sure. I'm applying for a software engineer position. |
-| 6 | 13:51 | Yes, but first read the assignment document to understand what is being asked. The code will be tested on this dataset and on an additional real dataset. |
-| 7 | 14:13 | A few days. I may need to explain the solution, though I'm not sure why. I'm allowed to use AI and any tools I want. |
-| 8 | 14:27 | I used ChatGPT to review the design while brainstorming; its review is below. What do you think of its feedback? Note that ChatGPT did not have the assignment, only the design. *[ChatGPT's full review of `docs/design.md` was pasted here; it is summarised in the table above.]* |
-| 9 | 14:32 | Yes, go ahead. |
-| 10 | 15:40 | Yes, use native execution and start building. How long will it take? |
-| 11 | 16:23 | How long will it take? |
-| 12 | 17:06 | How much time is left until the review finishes? |
-| 13 | 17:08 | Please present the prompts more professionally. Also, I used ChatGPT to brainstorm how to solve the problem. |
-| 14 | 17:12 | Here is the link to the ChatGPT conversation. As I said, please write the prompts in a more professional way. |
+**Prompt:**
 
-## Prompts — ChatGPT
+Are you familiar with Teramount? Please briefly explain the company's business, its core technology, and the products or solutions it develops. I would like to understand the context of the company before starting its technical assignment.
 
-The full ChatGPT conversation (brainstorming and design review), with every
-prompt and reply:
+### 2. Understanding the Assignment
 
-**https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44**
+**Prompt:**
 
-<details>
-<summary>Original wording of the Claude Code prompts (exact text, typos included)</summary>
+Please review the provided Teramount Home Assignment document carefully and explain its objectives in detail.
 
-| # | Prompt (exact text) |
-|---|---|
-| 1 | `hi , do you know teramount ?` |
-| 2 | `yes read the assismint and tell me what is this assigmint please` |
-| 3 | `for now install the required stuff` |
-| 4 | `yes do the design , this i want this to be profiistional and you do you maximum to give the best resutls please` |
-| 5 | `idk , iam applying for a software enginner position` |
-| 6 | `yes but read the doc first to understand what they are asking for , the code will be tested on this data set and real data set` |
-| 7 | `a few days, maybe i need to explain it idk why ? but i can use ai to solve it and use what ever i want` |
-| 8 | `i used chat gpt to review the design , he wrote me this iwhile brainstorming , [pasted ChatGPT review] , what do you think about what he sees ? notice that chatgpt dies not have the assigmn he has only the design` |
-| 9 | `yes do it` |
-| 10 | `yes go with native, start building ,how much will it take ??` |
-| 11 | `how much you will take ??` |
-| 12 | `how much time left until the review finishes?` |
-| 13 | `use the promts and inhence them to look profisinal , i used chat gpt to brain storm how to solve the problem` |
-| 14 | `https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44, but i as i told you write the promts in more profinsinla way` |
+I want to understand:
+- What the assignment expects me to implement.
+- What input data is provided.
+- What measurements and results must be extracted.
+- What challenges the assignment is designed to evaluate.
+- What the expected deliverables are.
+
+Start by explaining the problem in accessible language before suggesting an implementation approach. Do not make assumptions about requirements that are not stated in the assignment.
+
+### 3. Preparing the Development Environment
+
+**Prompt:**
+
+Before proceeding with the implementation, please inspect the project environment and install the dependencies required for the assignment.
+
+Use an appropriate Python environment, select suitable scientific-computing and image-processing libraries, and verify that the installation works. Please avoid introducing unnecessary dependencies.
+
+### 4. Designing the Solution
+
+**Prompt:**
+
+Please develop a comprehensive technical design for solving this assignment.
+
+The solution should demonstrate professional software engineering practices and prioritize measurement accuracy, robustness, maintainability, and reproducibility.
+
+Before proposing the architecture:
+1. Inspect the assignment and all available input data.
+2. Explore the structure and characteristics of the scans.
+3. Identify the main technical challenges and potential failure cases.
+4. Evaluate suitable algorithms for segmentation, geometric measurements, surface fitting, and fault detection.
+
+Then propose a modular architecture, explain the reasoning behind the major algorithmic choices, define the expected outputs, and establish a testing and validation strategy.
+
+The implementation will be evaluated on the provided dataset and an additional real-world dataset. Therefore, avoid hard-coded coordinates, file-specific assumptions, and solutions that only work on the current samples.
+
+### 5. Clarifying the Engineering Context
+
+**Prompt:**
+
+I am applying for a Software Engineer position, rather than a dedicated research or data-science position.
+
+Please take this into account when designing the solution. I want the implementation to demonstrate strong engineering practices, not simply produce accurate numerical results.
+
+Prioritize:
+- Clean and modular architecture.
+- Readable, maintainable Python code.
+- Appropriate abstractions and separation of responsibilities.
+- Automated testing and error handling.
+- Reproducible execution and clear documentation.
+
+The mathematical methods should still be rigorous, but their implementation and justification should be understandable and defensible in a software engineering interview.
+
+### 6. Reviewing the Assignment Before Finalizing the Design
+
+**Prompt:**
+
+Before finalizing the design, please return to the original assignment document and verify that the proposed solution addresses every requirement.
+
+The implementation will be tested against both the supplied dataset and an additional real dataset. This means the design must generalize beyond the observed scans.
+
+Please identify:
+- Requirements that are not yet covered.
+- Assumptions that need validation.
+- Algorithms that may fail under different scan conditions.
+- Potential edge cases.
+- Any unnecessary complexity that could be removed without compromising the solution.
+
+Do not finalize the design until you have checked it against the actual assignment requirements.
+
+### 7. Defining the Scope and Constraints
+
+**Prompt:**
+
+I expect to have a few days to complete the assignment. I may also be asked to explain and justify the implementation during a technical interview.
+
+I am permitted to use AI tools and other development resources.
+
+Please optimize the implementation strategy for this situation. The final result should be technically strong, but I also need to understand the important decisions well enough to explain them independently.
+
+Prioritize the essential requirements first and distinguish between must-have functionality and optional improvements.
+
+### 8. Finalizing the Design
+
+**Prompt:**
+
+Please proceed with the agreed design revisions.
+
+Update the design documentation to incorporate the accepted recommendations, resolve the identified inconsistencies, and ensure that the implementation plan is consistent with the final architecture.
+
+Before implementation, verify that the design, testing strategy, and deliverables are aligned.
+
+### 9. Starting the Implementation
+
+**Prompt:**
+
+The design is approved. Please proceed with the native implementation approach and build the complete solution in the current project.
+
+Follow the agreed implementation plan and work incrementally.
+
+For each task:
+1. Implement the functionality.
+2. Add or update the relevant automated tests.
+3. Run the tests and investigate any failures.
+4. Review the implementation before moving to the next task.
+
+Preserve the modular architecture and avoid shortcuts that compromise correctness or maintainability.
+
+Please also provide an estimate of the implementation time and identify the major remaining milestones.
+
+### 10. Requesting an Implementation Progress Update
+
+**Prompt:**
+
+Please provide an updated estimate of the remaining implementation time.
+
+Summarize the completed tasks, the work currently in progress, the outstanding tasks, and any issues that could affect the delivery timeline.
+
+### 11. Requesting a Review Progress Update
+
+**Prompt:**
+
+Please provide an update on the independent code review.
+
+How many issues have been identified, how many have been resolved, and what remains to be reviewed? Also, estimate how much time is needed to complete the review.
+
+### 12. Improving the AI Usage Documentation
+
+**Prompt:**
+
+I need to document my use of AI tools as part of the assignment submission.
+
+Please prepare a professional and transparent AI usage section for `AI_USAGE.md`.
+
+The documentation should describe how Claude Code contributed to the development process, including data exploration, technical design, implementation, testing, debugging, and documentation.
+
+Please present the prompts used during the interactions in a professional, well-structured format. Do not invent technical decisions or claim that suggestions were implemented unless they were actually accepted and used.
+
+---
+
+
 
 </details>
