@@ -9,8 +9,9 @@
   ``nominal_*`` +/- ``tol_*``, estimated from the clean provided files and
   overridable from the command line).
 * **Statistical** — a measurement is an outlier relative to the other scans
-  of the same run (robust z-score from median and MAD). Reported separately:
-  unusual is not the same as defective.
+  of the same run (robust z-score from median and MAD; for roughness and axis
+  offsets only the high side counts). Reported separately: unusual is not the
+  same as defective.
 """
 
 from __future__ import annotations
@@ -22,11 +23,18 @@ import numpy as np
 from .config import Config
 from .results import ScanResult
 
-STAT_METRICS: tuple[str, ...] = (
-    "pivot_height_diff_um", "xpander_rx_um", "xpander_ry_um", "xpander_nrms_pct",
-    "plane1_rms_um", "plane2_rms_um", "cross1_axis_offset_um", "cross2_axis_offset_um",
-    "xpander_apex_axis_offset_um",
-)
+# Metrics compared across a run, and which side of the median is anomalous.
+# Measured values (step, radii) can be wrong in either direction ("both");
+# roughness and axis offsets are "lower is better", so only an unusually high
+# value is an anomaly ("high"): an unusually smooth plane is not a defect. The
+# dome roughness is the absolute RMS, not RMS / sag, which rises for a clean
+# dome when the fit aperture is small (e.g. near the image border).
+STAT_METRICS: dict[str, str] = {
+    "pivot_height_diff_um": "both", "xpander_rx_um": "both", "xpander_ry_um": "both",
+    "xpander_rms_um": "high", "plane1_rms_um": "high", "plane2_rms_um": "high",
+    "cross1_axis_offset_um": "high", "cross2_axis_offset_um": "high",
+    "xpander_apex_axis_offset_um": "high",
+}
 
 
 def geometric_flags(result: ScanResult, config: Config) -> tuple[str, ...]:
@@ -83,12 +91,14 @@ def statistical_flags(metrics_list: Sequence[Mapping[str, float]], config: Confi
                       ) -> list[tuple[str, ...]]:
     """Robust outliers of each metric in :data:`STAT_METRICS` across a run.
 
-    The robust z-score is ``0.6745 * (x - median) / MAD``. A metric is skipped
-    when fewer than ``min_files_for_statistics`` scans have a value for it, or
-    when its MAD is zero.
+    The robust z-score is ``0.6745 * (x - median) / MAD``; a scan is an outlier
+    when ``|z|`` (two-sided metrics) or ``z`` (high-side metrics) exceeds
+    ``outlier_z``. A metric is skipped when fewer than
+    ``min_files_for_statistics`` scans have a value for it, or when its MAD is
+    zero.
     """
     flags: list[list[str]] = [[] for _ in metrics_list]
-    for metric in STAT_METRICS:
+    for metric, side in STAT_METRICS.items():
         values = np.array([float(m.get(metric, np.nan)) for m in metrics_list])
         finite = np.isfinite(values)
         if finite.sum() < config.min_files_for_statistics:
@@ -98,6 +108,7 @@ def statistical_flags(metrics_list: Sequence[Mapping[str, float]], config: Confi
         if mad == 0:
             continue
         z = 0.6745 * (values - median) / mad
-        for i in np.nonzero(finite & (np.abs(z) > config.outlier_z))[0]:
+        score = z if side == "high" else np.abs(z)
+        for i in np.nonzero(finite & (score > config.outlier_z))[0]:
             flags[i].append(f"{metric}_outlier")
     return [tuple(f) for f in flags]

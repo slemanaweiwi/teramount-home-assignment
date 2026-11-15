@@ -87,6 +87,31 @@ def test_statistical_outlier():
     assert flags[-1] == ("xpander_rx_um_outlier",) and all(f == () for f in flags[:-1])
 
 
+def test_unusually_smooth_surface_is_not_an_outlier():
+    # Roughness and axis offsets are "lower is better": only high values are anomalies.
+    rows = [{"plane2_rms_um": v} for v in (0.022, 0.023, 0.024, 0.025, 0.022, 0.023, 0.005)]
+    assert statistical_flags(rows, Config()) == [()] * 7
+
+
+def test_rough_surface_and_low_step_are_outliers():
+    # Measured values (step, radii) are anomalous in both directions.
+    rows = [{"plane2_rms_um": v, "pivot_height_diff_um": s} for v, s in (
+        (0.022, 18.15), (0.023, 18.16), (0.024, 18.17), (0.025, 18.18), (0.022, 18.16),
+        (0.023, 18.17), (0.400, 17.50))]
+    assert statistical_flags(rows, Config())[-1] == ("pivot_height_diff_um_outlier",
+                                                     "plane2_rms_um_outlier")
+
+
+def test_dome_roughness_outlier_uses_absolute_rms():
+    # A clean dome fitted over a small aperture: RMS / sag is high, the RMS is normal.
+    rows = [{"xpander_rms_um": 0.0080 + 0.0002 * i, "xpander_nrms_pct": n}
+            for i, n in enumerate((0.58, 0.60, 0.62, 0.59, 0.61, 0.60))]
+    rows.append({"xpander_rms_um": 0.0085, "xpander_nrms_pct": 2.5})
+    assert statistical_flags(rows, Config()) == [()] * 7
+    rows.append({"xpander_rms_um": 0.150, "xpander_nrms_pct": 10.6})
+    assert statistical_flags(rows, Config())[-1] == ("xpander_rms_um_outlier",)
+
+
 def test_statistics_need_five_files():
     assert statistical_flags([{"xpander_rx_um": v} for v in (1, 2, 100)], Config()) == [(), (), ()]
 
