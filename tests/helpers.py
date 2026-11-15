@@ -9,7 +9,9 @@ from __future__ import annotations
 import numpy as np
 
 from teramount_analysis.config import Config
+from teramount_analysis.crosses import CrossResult, find_cross
 from teramount_analysis.frame import Frame
+from teramount_analysis.pivot import segment_pivot
 from teramount_analysis.surface import segmentation_surface
 from teramount_analysis.tilt import fit_base_plane, remove_tilt
 
@@ -27,3 +29,13 @@ def prepare(z: np.ndarray, phi: float, config: Config | None = None
 def seg(z: np.ndarray) -> np.ndarray:
     """Segmentation surface of an unrotated scan."""
     return prepare(z, 0.0)[3]
+
+
+def run_crosses(z: np.ndarray, phi: float, config: Config | None = None
+                ) -> tuple[CrossResult, CrossResult]:
+    """Crosses on plane 1 and plane 2, using the known rotation ``phi``."""
+    config = config or Config()
+    z_leveled, frame, z_canonical, z_seg = prepare(z, phi, config)
+    reg = segment_pivot(z_seg, config)
+    return (find_cross(z_leveled, frame, z_canonical, reg.plane1, reg.axis_u, config),
+            find_cross(z_leveled, frame, z_canonical, reg.plane2, reg.axis_u, config))
