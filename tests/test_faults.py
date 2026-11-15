@@ -2,47 +2,19 @@
 
 from __future__ import annotations
 
-import dataclasses
 import math
 
 import pytest
+from helpers import fake_cross as _cross
+from helpers import fake_result as _result
+from helpers import fake_xpander as _xpander
 
 from teramount_analysis.config import Config
-from teramount_analysis.crosses import NOT_FOUND, CrossResult
+from teramount_analysis.crosses import NOT_FOUND
 from teramount_analysis.faults import geometric_flags, nominal_flags, statistical_flags
-from teramount_analysis.frame import Frame
 from teramount_analysis.pivot import PivotResult
 from teramount_analysis.results import METRIC_COLUMNS, FaultReport, ScanResult
-from teramount_analysis.rotation import RotationResult
-from teramount_analysis.tilt import TiltResult
 from teramount_analysis.xpander import XpanderResult
-
-
-def _cross(offset_um=0.2):
-    return CrossResult(True, 500.0, 770.0, 500.5, 770.2, 1.75, 19.0, 0.9, offset_um, None)
-
-
-def _xpander(rx=826.0, ry=824.0, nrms=0.6, offset=0.5):
-    base = XpanderResult.not_found("unused")
-    return dataclasses.replace(
-        base, found=True, reason="", apex_x_px=512.0, apex_y_px=385.0, apex_u_px=512.0,
-        apex_v_px=385.0, axis_offset_um=offset, aperture_radius_um=49.0, rx_um=rx, ry_um=ry,
-        rx_ci95_um=0.1, ry_ci95_um=0.1, r1_um=min(rx, ry), r2_um=max(rx, ry),
-        principal_angle_deg=0.0, rms_um=nrms / 100 * 1.45, nrms_pct=nrms, r_squared=0.9996,
-        sag_um=1.45, r_sphere_um=0.5 * (rx + ry), rx_profile_um=rx, ry_profile_um=ry,
-        stability_pct=1.0, n_points=120_000)
-
-
-def _result(**overrides):
-    r = ScanResult(
-        file="x.npy", status="ok", error="",
-        tilt=TiltResult(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.012, 0.65),
-        rotation=RotationResult(0.0, 0.01, 30, ()),
-        frame=Frame((100, 100), 0.0),
-        pivot=PivotResult(18.18, 18.0, 12.9, 31.08, 0.045, 0.025, 0.05),
-        cross1=_cross(), cross2=_cross(), xpander=_xpander(),
-    )
-    return dataclasses.replace(r, **overrides)
 
 
 def test_clean_result_has_no_flags_and_not_faulty():

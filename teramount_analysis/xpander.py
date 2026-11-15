@@ -50,6 +50,7 @@ class XpanderResult:
     apex_y_px: float
     apex_u_px: float  # apex, canonical frame
     apex_v_px: float
+    apex_z_um: float  # fitted apex height above the base [µm]
     axis_offset_um: float  # |u_apex - channel axis| [µm]
     aperture_radius_um: float  # radius of the fitted area [µm]
     rx_um: float  # radius of curvature along the chip x axis [µm]
@@ -73,7 +74,7 @@ class XpanderResult:
     @classmethod
     def not_found(cls, reason: str) -> XpanderResult:
         """Result for an Xpander that could not be measured."""
-        return cls(False, reason, *([_NAN] * 21), 0, None)
+        return cls(False, reason, *([_NAN] * 22), 0, None)
 
 
 _not_found = XpanderResult.not_found
@@ -256,6 +257,7 @@ def _summarise(q: QuadricFit, ap: _Aperture, frame: Frame, regions: PivotRegions
         apex_y_px=float(y0),
         apex_u_px=float(u0),
         apex_v_px=float(v0),
+        apex_z_um=float(q.evaluate(*q.vertex())),
         axis_offset_um=abs(u0 - regions.axis_u) * p,
         aperture_radius_um=radius_px * p,
         rx_um=float(-1 / (2 * c[3])),
