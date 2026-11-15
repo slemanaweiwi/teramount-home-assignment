@@ -111,5 +111,56 @@ def test_neighbour_too_close_reason_names_the_neighbour():
 def test_dome_cut_by_border_is_not_found():
     z, _ = make_scan(crop_top_um=60.0)  # top 60 µm removed: dome apex 20 µm from the border
     x = run_xpander(z, 0.0)
-    assert not x.found and x.reason  # rejected by prominence or by aperture size, never fitted
+    assert not x.found and "no prominent dome" in x.reason and "border" in x.reason
     assert np.isnan(x.rx_um)
+
+
+def test_no_room_above_the_pivot_is_not_found():
+    z, _ = make_scan(crop_top_um=153.0)  # plane 1 starts at the top edge of the scan
+    x = run_xpander(z, 0.0)
+    assert not x.found and "no room" in x.reason
+
+
+def test_flat_surface_has_no_dome():
+    z, _ = make_scan(rx_um=1e9, ry_um=1e9)  # the dome row is flat
+    x = run_xpander(z, 0.0)
+    assert not x.found and "no prominent dome" in x.reason
+
+
+def test_unstable_apex_is_reported_not_raised(monkeypatch):
+    import teramount_analysis.xpander as xpander_module
+
+    class FarVertex:  # a fit whose vertex lies far outside the aperture
+        @staticmethod
+        def vertex():
+            return 100.0, 0.0  # µm; half the aperture is about 25 µm
+
+    monkeypatch.setattr(xpander_module, "_fit", lambda ap, pixel_size_um: FarVertex())
+    z, _ = make_scan()
+    x = run_xpander(z, 0.0)
+    assert not x.found and "unstable" in x.reason
+
+
+def test_saddle_surface_is_not_convex():
+    from teramount_analysis.errors import FitError
+    from teramount_analysis.xpander import _Aperture, _fit
+
+    du, dv = (a.ravel() for a in np.meshgrid(np.linspace(-150, 150, 61),
+                                             np.linspace(-150, 150, 61)))
+    z = 12.0 + (du * 0.252) ** 2 / (2 * 5000) - (dv * 0.252) ** 2 / (2 * 840)
+    ap = _Aperture(np.zeros(du.size, int), np.zeros(du.size, int), du, dv, z)
+    with pytest.raises(FitError, match="not convex"):
+        _fit(ap, 0.252)
+
+
+def test_fit_failure_in_the_aperture_loop_is_reported(monkeypatch):
+    import teramount_analysis.xpander as xpander_module
+    from teramount_analysis.errors import FitError
+
+    def saddle(ap, pixel_size_um):
+        raise FitError("surface not convex")
+
+    monkeypatch.setattr(xpander_module, "_fit", saddle)
+    z, _ = make_scan()
+    x = run_xpander(z, 0.0)
+    assert not x.found and x.reason == "surface not convex"

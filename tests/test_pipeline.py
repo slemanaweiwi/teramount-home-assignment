@@ -10,7 +10,7 @@ from teramount_analysis import Config, analyse_dataset, analyse_file, analyse_sc
 from teramount_analysis.io import discover_scans
 
 
-@pytest.mark.parametrize("phi,k", [(0.75, 0), (-0.5, 2)])
+@pytest.mark.parametrize("phi,k", [(0.75, 0), (-0.5, 2), (0.5, 1), (-0.75, 3)])
 def test_end_to_end_synthetic(phi, k):
     z, t = make_scan(rotation_deg=phi, quarter_turns=k, slope_x=0.001, slope_y=-0.0015)
     r = analyse_scan(z, Config(), "syn")
@@ -23,6 +23,39 @@ def test_end_to_end_synthetic(phi, k):
     assert m["xpander_rx_um"] == pytest.approx(820, rel=0.003)
     assert m["xpander_ry_um"] == pytest.approx(840, rel=0.003)
     assert m["tilt_x_deg"] == pytest.approx(np.degrees(np.arctan(0.001)), abs=0.002)
+
+
+def test_two_channels_end_to_end_measures_the_central_one():
+    # Second complete channel 126 µm to the right; the first is nearer the centre.
+    z, t = make_scan(shape=(1200, 1000), channel_offset_um=-50, second_channel=True)
+    r = analyse_scan(z, Config())
+    m = r.metrics(Config())
+    assert r.status == "ok" and not r.faults.faulty, (r.error, r.faults)
+    assert (m["cross1_x_px"], m["cross1_y_px"]) == pytest.approx(t.cross1_xy_px, abs=0.3)
+    assert (m["cross2_x_px"], m["cross2_y_px"]) == pytest.approx(t.cross2_xy_px, abs=0.3)
+    assert m["xpander_apex_x_px"] == pytest.approx(t.apex_xy_px[0], abs=1.0)
+    assert m["pivot_height_diff_um"] == pytest.approx(18.1, abs=0.02)
+    assert m["xpander_rx_um"] == pytest.approx(820, rel=0.003)
+
+
+def test_clustered_nan_dropouts_are_tolerated():
+    # Patches of invalid pixels (not isolated ones) on the dome inside the fit
+    # aperture, on both Pivot planes away from the crosses, and on the base.
+    z, t = make_scan()
+    p = 0.252
+    rows, cols = np.indices(z.shape, dtype=float)
+    x, y, xc = cols * p, rows * p, z.shape[1] * p / 2
+    for cx, cy, radius in ((xc + 25, 100.0, 6.0), (xc - 25, 172.0, 5.0), (xc + 8, 190.0, 2.0),
+                           (xc - 60, 260.0, 15.0)):
+        z[(x - cx) ** 2 + (y - cy) ** 2 <= radius**2] = np.nan
+    r = analyse_scan(z, Config())
+    m = r.metrics(Config())
+    assert r.status == "ok" and not r.faults.faulty, (r.error, r.faults)
+    assert m["pivot_height_diff_um"] == pytest.approx(18.1, abs=0.02)
+    assert (m["cross1_x_px"], m["cross1_y_px"]) == pytest.approx(t.cross1_xy_px, abs=0.3)
+    assert (m["cross2_x_px"], m["cross2_y_px"]) == pytest.approx(t.cross2_xy_px, abs=0.3)
+    assert m["xpander_rx_um"] == pytest.approx(820, rel=0.003)
+    assert m["xpander_ry_um"] == pytest.approx(840, rel=0.003)
 
 
 def test_global_offset_does_not_change_results():
