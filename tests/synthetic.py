@@ -61,6 +61,7 @@ def _render(
     rx: float,
     ry: float,
     dome: str,
+    dome_angle_deg: float,
     second_channel: bool,
     cross1: bool,
     cross2: bool,
@@ -72,12 +73,16 @@ def _render(
 
     z[y < 12.0] = 13.0  # supporting band
     domes = np.full(shape, -np.inf)
+    a = np.deg2rad(dome_angle_deg)
     for k in (-1, 0, 1):
         dx, dy = x - xc - PITCH_UM * k, y - APEX_Y_UM
         if dome == "sphere":
             h = APEX_HEIGHT_UM - (rx - np.sqrt(np.maximum(rx**2 - dx**2 - dy**2, 0.0)))
         else:
-            h = APEX_HEIGHT_UM - dx**2 / (2 * rx) - dy**2 / (2 * ry)
+            # Principal axes turned counter-clockwise as displayed (y points down):
+            # the rx axis is (cos a, -sin a), the ry axis (sin a, cos a).
+            s, t = dx * np.cos(a) - dy * np.sin(a), dx * np.sin(a) + dy * np.cos(a)
+            h = APEX_HEIGHT_UM - s**2 / (2 * rx) - t**2 / (2 * ry)
         domes = np.maximum(domes, h)
     dome_row = (y >= 12.0) & (y < 145.0)
     z[dome_row] = domes[dome_row]
@@ -146,6 +151,7 @@ def make_scan(
     rx_um: float = 820.0,
     ry_um: float = 840.0,
     dome: str = "paraboloid",
+    dome_angle_deg: float = 0.0,
     channel_offset_um: float = 0.0,
     second_channel: bool = False,
     cross1: bool = True,
@@ -157,16 +163,18 @@ def make_scan(
     """Generate a synthetic scan and its ground truth.
 
     ``dome="sphere"`` draws a spherical cap of radius ``rx_um`` (``ry_um`` is
-    then ignored and reported equal to ``rx_um``). Rotation follows the
-    ``scipy.ndimage.rotate`` convention (positive = counter-clockwise on screen).
+    then ignored and reported equal to ``rx_um``). ``dome_angle_deg`` turns the
+    paraboloid's principal axes relative to the chip (counter-clockwise on
+    screen); ``rx_um`` and ``ry_um`` are then its principal radii. Rotation follows
+    the ``scipy.ndimage.rotate`` convention (positive = counter-clockwise on screen).
     """
     p = pixel_size_um
     xc = shape[1] * p / 2 + channel_offset_um
     crop_rows = int(round(crop_top_um / p))
     rng = np.random.default_rng(seed)
 
-    z, pivot_mask, dome_mask = _render(shape, p, xc, rx_um, ry_um, dome, second_channel,
-                                       cross1, cross2)
+    z, pivot_mask, dome_mask = _render(shape, p, xc, rx_um, ry_um, dome, dome_angle_deg,
+                                       second_channel, cross1, cross2)
     z = ndimage.gaussian_filter(z, 0.7)
     z = _transform(z, rotation_deg, quarter_turns, crop_rows, order=1)
     pivot_mask = _transform(pivot_mask.astype(float), rotation_deg, quarter_turns, crop_rows,

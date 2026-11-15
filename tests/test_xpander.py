@@ -33,6 +33,15 @@ def test_principal_radii_and_stability_of_a_paraboloid():
     assert x.residual_map is not None and np.isfinite(x.residual_map).sum() > 0.9 * x.n_points
 
 
+@pytest.mark.parametrize("angle", [20.0, -35.0])
+def test_principal_angle_is_counter_clockwise(angle):
+    # Same sign convention as the rotation: positive = counter-clockwise as displayed.
+    z, _ = make_scan(rx_um=800, ry_um=860, dome_angle_deg=angle)
+    x = run_xpander(z, 0.0)
+    assert x.r1_um == pytest.approx(800, rel=0.005) and x.r2_um == pytest.approx(860, rel=0.005)
+    assert x.principal_angle_deg == pytest.approx(angle, abs=1.0)
+
+
 def test_boundary_stops_at_the_valley_to_the_neighbour():
     z, t = make_scan()
     zs = smooth(prepare(z, 0.0)[2], Config().px(2.0))

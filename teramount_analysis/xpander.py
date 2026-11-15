@@ -59,7 +59,9 @@ class XpanderResult:
     ry_ci95_um: float
     r1_um: float  # smaller principal radius [µm]
     r2_um: float  # larger principal radius [µm]
-    principal_angle_deg: float  # direction of R1 from +u, in (-90, 90] [deg]
+    # Direction of R1 from +u (chip x axis), counter-clockwise as displayed (the
+    # rotation's convention), in (-90, 90] [deg]: about 0 when R1 lies along x.
+    principal_angle_deg: float
     rms_um: float  # RMS fit residual [µm]
     nrms_pct: float  # RMS residual / sag [%]
     r_squared: float  # coefficient of determination
@@ -212,7 +214,9 @@ def _summarise(q: QuadricFit, ap: _Aperture, frame: Frame, regions: PivotRegions
     c, cov = q.coeffs, q.cov
     du, dv = ap.du * p, ap.dv * p
     lam, vec = np.linalg.eigh(q.hessian())  # ascending: lam[0] most curved
-    angle = math.degrees(math.atan2(vec[1, 0], vec[0, 0]))
+    # v points down on screen: negate it so the angle is counter-clockwise as
+    # displayed, the same convention as the rotation angle.
+    angle = math.degrees(math.atan2(-vec[1, 0], vec[0, 0]))
     angle = angle + 180.0 if angle <= -90.0 else (angle - 180.0 if angle > 90.0 else angle)
     fitted = q.evaluate(du, dv)
     sag = float(fitted.max() - fitted.min())
