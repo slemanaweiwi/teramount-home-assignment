@@ -51,6 +51,18 @@ def test_ramp_direction_follows_quarter_turns(k, expected):
     assert np.dot(d, expected) > 0.95
 
 
+def test_symmetric_plateau_has_no_ramp_direction():
+    # A plateau with identical ramps on all four sides (a square frustum): the
+    # downhill directions cancel, so the orientation must not be guessed.
+    p = 0.252
+    rows, cols = np.indices((600, 600), dtype=float)
+    d = np.maximum(np.abs(cols - 299.5), np.abs(rows - 299.5)) * p  # µm from the centre
+    z = ndimage.gaussian_filter(np.clip(30.0 - (d - 10.0), 0.0, 30.0), 1.0 / p)
+    plane2 = d <= 9.0
+    with pytest.raises(ElementNotFoundError, match="ambiguous"):
+        ramp_direction(z, plane2, Config())
+
+
 @pytest.mark.parametrize("d,k", [((0, -1), 0), ((1, 0), 1), ((0, 1), 2), ((-1, 0), 3)])
 def test_quarter_turns_for(d, k):
     assert quarter_turns_for(d) == k

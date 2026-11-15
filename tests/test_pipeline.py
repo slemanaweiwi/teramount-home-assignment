@@ -99,6 +99,20 @@ def test_unmeasured_rotation_is_a_warning_not_a_fault(monkeypatch):
     assert "rotation_not_measured" not in r.faults.geometric
 
 
+def test_ambiguous_ramp_is_reported_as_missing_ramp(monkeypatch):
+    import teramount_analysis.pipeline as pipeline_module
+    from teramount_analysis.errors import ElementNotFoundError
+
+    def ambiguous(*args, **kwargs):
+        raise ElementNotFoundError("Pivot ramp direction is ambiguous")
+
+    monkeypatch.setattr(pipeline_module, "ramp_direction", ambiguous)
+    z, _ = make_scan()
+    r = analyse_scan(z, Config())
+    assert r.status == "failed" and "ambiguous" in r.error
+    assert r.faults.geometric == ("ramp_not_found",)
+
+
 def test_rotation_correction_can_be_disabled():
     z, _ = make_scan()
     r = analyse_scan(z, Config(correct_rotation=False))

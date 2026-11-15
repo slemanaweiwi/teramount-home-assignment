@@ -53,6 +53,11 @@ class Config:
     ramp_search_um: float = 30.0  # ramp search distance around plane 2 [µm]
     ramp_slope_min: float = 0.3  # ramp slope lower bound [µm/µm]
     ramp_slope_max: float = 1.5  # ramp slope upper bound [µm/µm]
+    # Mean resultant length of the downhill unit vectors near plane 2 (1 = all
+    # parallel, 0 = no preferred direction). Below it the ramp direction, and so
+    # the orientation, is ambiguous. Provided scans: 0.23-0.26 (other sloped
+    # pixels dilute it); a plateau with ramps on all sides: about 0.
+    ramp_min_resultant: float = 0.1
     plane_edge_margin_um: float = 0.5  # plane edge excluded from fits [µm]
     walk_max_um: float = 100.0  # max walk from plane 2 to plane 1 [µm]
 

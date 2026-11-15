@@ -81,7 +81,7 @@ class ScanResult:
     cross1: CrossResult | None = None
     cross2: CrossResult | None = None
     xpander: XpanderResult | None = None
-    missing: tuple[str, ...] = ()  # elements that could not be located ("plane2", "plane1")
+    missing: tuple[str, ...] = ()  # elements not located: "plane2", "ramp" or "plane1"
     faults: FaultReport | None = None
     debug: ScanDebug | None = field(default=None, repr=False)
 

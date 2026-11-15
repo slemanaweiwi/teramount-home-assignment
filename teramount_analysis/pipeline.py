@@ -89,8 +89,12 @@ def _run(z: np.ndarray, config: Config, result: ScanResult) -> None:
         raise
     try:
         k = quarter_turns_for(ramp_direction(z_seg, plane2, config))
-        result.frame = Frame(z.shape, phi, k)
-        z_seg = np.ascontiguousarray(np.rot90(z_seg, k))
+    except ElementNotFoundError:
+        result.missing = ("ramp",)
+        raise
+    result.frame = Frame(z.shape, phi, k)
+    z_seg = np.ascontiguousarray(np.rot90(z_seg, k))
+    try:
         regions = segment_pivot(z_seg, config)
     except ElementNotFoundError:
         result.missing = ("plane1",)

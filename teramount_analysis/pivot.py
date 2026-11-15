@@ -91,7 +91,9 @@ def ramp_direction(z_seg: np.ndarray, plane2: np.ndarray, config: Config
     Raises
     ------
     ElementNotFoundError
-        If fewer than 50 ramp pixels are found.
+        If fewer than 50 ramp pixels are found, or if their downhill directions
+        have no clear preferred direction (mean resultant length below
+        ``ramp_min_resultant``, e.g. a plateau with ramps on every side).
     """
     p = config.pixel_size_um
     pad = int(math.ceil(config.px(config.ramp_search_um))) + 2
@@ -110,7 +112,12 @@ def ramp_direction(z_seg: np.ndarray, plane2: np.ndarray, config: Config
         raise ElementNotFoundError("no ramp found next to plane 2")
     norm = np.hypot(gx[ring], gy[ring])
     d = np.array([np.mean(-gx[ring] / norm), np.mean(-gy[ring] / norm)])
-    d /= np.linalg.norm(d)
+    resultant = float(np.linalg.norm(d))  # 1 = all parallel, 0 = no preferred direction
+    if resultant < config.ramp_min_resultant:
+        raise ElementNotFoundError(
+            f"Pivot ramp direction is ambiguous: the slopes around plane 2 have no "
+            f"preferred direction (resultant {resultant:.2f} < {config.ramp_min_resultant})")
+    d /= resultant
     return float(d[0]), float(d[1])
 
 
