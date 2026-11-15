@@ -15,6 +15,9 @@ dependencies = [
     "matplotlib>=3.7",
 ]
 
+[project.scripts]
+teramount-analysis = "teramount_analysis.cli:main"
+
 [tool.setuptools]
 packages = ["teramount_analysis"]
 
