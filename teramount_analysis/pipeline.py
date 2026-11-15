@@ -31,7 +31,7 @@ from .crosses import find_cross
 from .errors import AnalysisError, ElementNotFoundError, RotationError
 from .faults import geometric_flags, nominal_flags, statistical_flags
 from .frame import Frame
-from .io import load_scan
+from .io import check_height_map, load_scan
 from .pivot import find_plane2, measure_pivot, quarter_turns_for, ramp_direction, segment_pivot
 from .results import FaultReport, ScanDebug, ScanResult
 from .rotation import estimate_rotation
@@ -43,7 +43,11 @@ log = logging.getLogger(__name__)
 
 
 def analyse_scan(z: np.ndarray, config: Config, name: str = "") -> ScanResult:
-    """Analyse one height map (µm). Never raises for problems in the data."""
+    """Analyse one height map (µm). Never raises for problems in the data.
+
+    An input that is not a usable height map (wrong shape, too small, not
+    numeric, no finite value) gives a ``failed`` result with the reason.
+    """
     result = ScanResult(file=name)
     try:
         _run(z, config, result)
@@ -62,6 +66,7 @@ def analyse_scan(z: np.ndarray, config: Config, name: str = "") -> ScanResult:
 
 def _run(z: np.ndarray, config: Config, result: ScanResult) -> None:
     """Fill ``result`` step by step; raises AnalysisError on a blocking problem."""
+    z = check_height_map(z, result.file or "scan")
     result.tilt = fit_base_plane(z, config)
     z_leveled = remove_tilt(z, result.tilt, config)
     result.debug = ScanDebug(z_leveled)

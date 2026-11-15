@@ -40,6 +40,19 @@ def test_nan_dropouts_are_tolerated():
     assert r.metrics(Config())["pivot_height_diff_um"] == pytest.approx(18.1, abs=0.03)
 
 
+@pytest.mark.parametrize("z, message", [
+    (np.zeros(500), "2-D"),
+    (np.zeros((20, 20)), "small"),
+    (np.full((300, 300), np.nan), "finite"),
+    (np.full((100, 100), "a"), "numeric"),
+    ([[1.0, 2.0], [3.0]], "array"),
+])
+def test_invalid_input_fails_with_a_clear_message(z, message):
+    r = analyse_scan(z, Config(), "bad")
+    assert r.status == "failed" and message in r.error, r.error
+    assert "unexpected" not in r.error and r.faults is not None
+
+
 def test_constant_scan_fails_cleanly():
     r = analyse_scan(np.zeros((300, 300)), Config(), "flat")
     assert r.status == "failed" and r.error and r.faults is not None

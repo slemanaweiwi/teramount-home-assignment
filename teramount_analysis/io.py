@@ -79,16 +79,35 @@ def load_scan(path: Path | str, z_scale: float = 1.0) -> np.ndarray:
         raise ScanLoadError(f"cannot read {path.name}: {exc}") from exc
     if not isinstance(raw, np.ndarray):
         raise ScanLoadError(f"{path.name} does not contain a single array")
-    if raw.ndim != 2:
-        raise ScanLoadError(f"{path.name}: expected a 2-D height map, got shape {raw.shape}")
-    if min(raw.shape) < MIN_SIDE_PX:
+    return check_height_map(raw, path.name) * z_scale
+
+
+def check_height_map(z: object, name: str = "scan") -> np.ndarray:
+    """Validate a height map and return it as a new float64 array.
+
+    Used for files (:func:`load_scan`) and for arrays passed to the Python API
+    directly, so both get the same clear error messages.
+
+    Raises
+    ------
+    ScanLoadError
+        If ``z`` is not a numeric 2-D array with at least ``MIN_SIDE_PX`` pixels
+        on each side and at least one finite value.
+    """
+    try:
+        arr = np.asarray(z)
+    except ValueError as exc:  # e.g. a ragged nested list
+        raise ScanLoadError(f"{name}: not a rectangular array of heights") from exc
+    if arr.ndim != 2:
+        raise ScanLoadError(f"{name}: expected a 2-D height map, got shape {arr.shape}")
+    if min(arr.shape) < MIN_SIDE_PX:
         raise ScanLoadError(
-            f"{path.name}: scan too small {raw.shape}, need >= {MIN_SIDE_PX} px per side"
+            f"{name}: scan too small {arr.shape}, need >= {MIN_SIDE_PX} px per side"
         )
     try:
-        z = np.array(raw, dtype=np.float64) * z_scale
+        out = np.array(arr, dtype=np.float64)
     except (TypeError, ValueError) as exc:
-        raise ScanLoadError(f"{path.name}: heights are not numeric ({raw.dtype})") from exc
-    if not np.isfinite(z).any():
-        raise ScanLoadError(f"{path.name}: contains no finite height values")
-    return z
+        raise ScanLoadError(f"{name}: heights are not numeric ({arr.dtype})") from exc
+    if not np.isfinite(out).any():
+        raise ScanLoadError(f"{name}: contains no finite height values")
+    return out
