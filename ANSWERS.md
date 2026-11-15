@@ -35,7 +35,7 @@ After correction, every clean element in dataset 2 matches its twin:
 - radii within **0.017 µm**;
 - cross centres within **0.23 px**.
 
-The measured rotations are within **0.016°** of the applied ones.
+The measured rotations are within **0.0155°** of the applied ones.
 
 ---
 
@@ -226,7 +226,7 @@ to the apex:
 - **Exact sphere fit** (geometric least squares): within **0.09 %** of
   (Rx+Ry)/2 on every scan, which confirms the paraxial model.
 - **Circle fits to the single x and y profiles through the apex:** within
-  about 1–2 % on clean domes, but unstable on noisy ones (see §1.6).
+  0.9 % of Rx and Ry on clean domes, but unstable on noisy ones (see §1.6).
 
 | File | Rx [µm] (95 % CI) | Ry [µm] (95 % CI) | RMS [nm] | nRMS [%] | R² | Aperture stability [%] | Sphere R [µm] |
 |---|---|---|---|---|---|---|---|
@@ -256,7 +256,13 @@ The *sag* is the height of the fitted dome over the aperture, about 1.45 µm
 here. nRMS is the typical deviation of the surface from the model, as a
 percentage of the size of the feature being measured.
 
-- It is dimensionless, so it compares domes of different size.
+- It is dimensionless, so it compares the fit quality of domes of different
+  size.
+- It is **not** used to decide whether a surface is defective. Over a smaller
+  aperture (for example a dome near the image border) the sag shrinks with
+  r², so nRMS rises even for a perfect surface. The noisy-surface fault flag
+  therefore uses the **absolute RMS** instead: above 30 nm, against 7–9 nm on
+  clean domes and 154–231 nm on noisy ones.
 - It is easy to read: 0.6 % means the surface follows the model to within
   0.6 % of its height.
 - **R²** (the share of the height variance the model explains) is reported
@@ -331,8 +337,8 @@ twin. That's within its 95 % CI of ±3.2 µm (0.4 %); see
 Every file passes the structural checks:
 
 - every element is found;
-- crosses are on the axis within 0.61 µm and the apex within 0.80 µm;
-- the planes are parallel within 0.42°;
+- crosses are on the axis within 0.58 µm and the apex within 0.81 µm;
+- the planes are parallel within 0.28°;
 - steps are 18.11–18.23 µm and radii are within 811–844 µm.
 
 One file stands out:
@@ -359,9 +365,10 @@ plus the matching statistical outliers.
 
 - **Files 1, 12 and 14 are a different variant.** The channel sits at another
   position, a neighbouring structure is missing, and the raw heights are about
-  5 µm lower. Their Xpanders are slightly flatter along x: Ry > Rx by
-  12–16 µm (1.5–1.9 %), while every other file has Rx > Ry by 4–6 µm. This is
-  within tolerance, and most likely a die-position or process difference.
+  5 µm lower. Their Xpanders are more strongly curved along x than along y:
+  Ry exceeds Rx by 11.3–15.4 µm (1.4–1.9 %). Every other file has the opposite
+  sign, Rx > Ry by 3.4–7.7 µm (0.4–0.9 %). This is within tolerance, and most
+  likely a die-position or process difference.
 - **File 11 has the largest radius** (843.8/838.0 µm, +2 %). It is within
   tolerance.
 - **Files 11–14 have a step about 0.06 µm higher** (18.21–18.23 µm) than files
@@ -404,7 +411,7 @@ used **only to validate** the estimator, never as an input.
 
 **Accuracy:**
 
-- The mean absolute error is **0.008°** and the worst is **0.016°**
+- The mean absolute error is **0.008°** and the worst is **0.0155°**
   (figure `docs/figures/rotation_validation.png`).
 - The reported standard errors are 0.008–0.017°, consistent with the actual
   errors.
@@ -446,7 +453,7 @@ rotation.
      slightly tilted edges that flattens the measured angle. In my prototype
      an applied 0.25° was measured as 0.21°, with a worst error of 0.047°.
    - The mid-level crossing does not have this bias. The worst error dropped
-     to 0.016°.
+     to 0.0155°.
 3. A straight line is fitted to the points of each edge. Edges whose points
    are not straight (RMS > 0.25 px) are rejected.
 4. The rotation is the **median of the 32–46 edge angles, weighted by edge

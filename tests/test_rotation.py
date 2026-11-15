@@ -54,6 +54,30 @@ def test_rotation_with_nans_and_tilt():
     assert estimate_rotation(z, Config()).angle_deg == pytest.approx(0.75, abs=0.03)
 
 
+def _wall_dropouts(z, fraction, seed=0):
+    """NaN on a random share of the steep-wall pixels (profilometer dropouts)."""
+    from teramount_analysis.surface import slope
+
+    walls = np.argwhere(slope(z, 0.252) > 1.5)
+    rng = np.random.default_rng(seed)
+    pick = walls[rng.random(len(walls)) < fraction]
+    out = z.copy()
+    out[pick[:, 0], pick[:, 1]] = np.nan
+    return out
+
+
+@pytest.mark.parametrize("fraction", [0.5, 1.0])
+def test_wall_dropouts_never_bias_the_rotation(fraction):
+    # Filled-in wall pixels must not be measured as edge positions: the result is
+    # either accurate or an explicit RotationError, never a silent bias (review I2).
+    z, _ = make_scan(rotation_deg=0.25)
+    try:
+        r = estimate_rotation(_wall_dropouts(z, fraction), Config())
+    except RotationError:
+        return
+    assert r.angle_deg == pytest.approx(0.25, abs=0.03)
+
+
 def test_flat_image_raises():
     with pytest.raises(RotationError):
         estimate_rotation(np.zeros((300, 300)), Config())

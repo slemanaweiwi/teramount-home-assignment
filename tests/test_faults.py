@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import math
 
 import pytest
@@ -33,6 +34,21 @@ def test_noisy_plane_and_dome_flagged():
 def test_missing_elements_flagged():
     r = _result(cross2=NOT_FOUND, xpander=XpanderResult.not_found("no dome"))
     assert set(geometric_flags(r, Config())) == {"cross2_not_found", "xpander_not_found"}
+
+
+def test_unmeasured_xpander_after_pivot_is_flagged():
+    r = _result(xpander=None)
+    assert "xpander_not_found" in geometric_flags(r, Config())
+
+
+def test_noisy_flag_uses_absolute_rms_not_aperture_relative():
+    # A clean surface fitted over a small aperture: low RMS, but high RMS / sag.
+    small_aperture_clean = dataclasses.replace(_xpander(), rms_um=0.009, sag_um=0.36,
+                                               nrms_pct=2.5)
+    rough = dataclasses.replace(_xpander(), rms_um=0.15, nrms_pct=10.0)
+    assert "xpander_surface_noisy" not in geometric_flags(_result(xpander=small_aperture_clean),
+                                                          Config())
+    assert "xpander_surface_noisy" in geometric_flags(_result(xpander=rough), Config())
 
 
 def test_missing_planes_and_rotation_flagged():

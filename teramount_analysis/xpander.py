@@ -201,9 +201,9 @@ def measure_xpander(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray
             return _not_found("aperture too small (dome cut by border or neighbour)")
         ap = _select(z_leveled, frame, u0, v0, radius)
         q = _fit(ap, p)
-    except FitError as exc:
+        return _summarise(q, ap, frame, regions, u0, v0, radius, config)
+    except FitError as exc:  # e.g. a saddle-shaped fit with no unique vertex
         return _not_found(str(exc))
-    return _summarise(q, ap, frame, regions, u0, v0, radius, config)
 
 
 def _summarise(q: QuadricFit, ap: _Aperture, frame: Frame, regions: PivotRegions, u0: float,

@@ -53,6 +53,17 @@ def test_missing_cross_gives_partial_result():
     assert r.metrics(Config())["pivot_height_diff_um"] == pytest.approx(18.1, abs=0.03)
 
 
+def test_clean_dome_near_border_is_not_flagged_noisy():
+    # Cropping the top shrinks the fit aperture (and so the dome sag); a clean
+    # surface must still not be reported as noisy (review finding I1).
+    z, _ = make_scan(crop_top_um=44.0)
+    r = analyse_scan(z, Config())
+    assert r.xpander is not None and r.xpander.found
+    assert r.xpander.aperture_radius_um < 35.0
+    assert "xpander_surface_noisy" not in r.faults.geometric and not r.faults.faulty
+    assert r.metrics(Config())["pivot_height_diff_um"] == pytest.approx(18.1, abs=0.03)
+
+
 def test_noisy_dome_is_faulty():
     z, _ = make_scan(xpander_noise_um=0.2)
     r = analyse_scan(z, Config())

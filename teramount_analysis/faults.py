@@ -39,15 +39,16 @@ def geometric_flags(result: ScanResult, config: Config) -> tuple[str, ...]:
         if cross is not None and not cross.found:
             flags.append(f"cross{n}_not_found")
     x = result.xpander
-    if x is not None and not x.found:
-        flags.append("xpander_not_found")
+    xpander_missing = x is not None and not x.found
+    if xpander_missing or (x is None and result.pivot is not None):
+        flags.append("xpander_not_found")  # None after a Pivot = measurement aborted
     pv = result.pivot
     if pv is not None:
         if pv.plane1_rms_um > config.max_plane_rms_um:
             flags.append("plane1_noisy")
         if pv.plane2_rms_um > config.max_plane_rms_um:
             flags.append("plane2_noisy")
-    if x is not None and x.found and x.nrms_pct > config.max_xpander_nrms_pct:
+    if x is not None and x.found and x.rms_um > config.max_xpander_rms_um:
         flags.append("xpander_surface_noisy")
     for n, cross in ((1, result.cross1), (2, result.cross2)):
         off_axis = cross is not None and cross.axis_offset_um > config.max_cross_axis_offset_um

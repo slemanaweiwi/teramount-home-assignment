@@ -88,7 +88,10 @@ class Config:
 
     # --- Quality limits (geometric checks) -----------------------------------
     max_plane_rms_um: float = 0.15  # plane-fit residual above this = noisy plane [µm]
-    max_xpander_nrms_pct: float = 2.0  # dome residual / sag above this = noisy [%]
+    # Dome fit residual above this = noisy surface [µm]. Absolute, not relative to
+    # the sag: the sag shrinks with the aperture (e.g. a dome near the border), the
+    # roughness of the surface does not. Clean domes: 7-9 nm; noisy ones: 150-230 nm.
+    max_xpander_rms_um: float = 0.03
     max_cross_axis_offset_um: float = 1.0  # cross centre distance from the axis [µm]
     max_apex_axis_offset_um: float = 3.0  # Xpander apex distance from the axis [µm]
     max_plane_parallelism_deg: float = 0.5  # angle between plane 1 and plane 2 [deg]

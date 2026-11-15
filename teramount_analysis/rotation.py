@@ -126,37 +126,57 @@ def _weighted_median(values: np.ndarray, weights: np.ndarray) -> float:
     return float(v[np.searchsorted(cum, 0.5 * cum[-1])])
 
 
-def _edge_points(seg: tuple, vertical: bool, zs: np.ndarray, g: np.ndarray, half: int,
-                 margin: int) -> tuple[list[tuple[float, float]], int]:
-    """Sub-pixel edge points along one Hough segment and the number of samples.
+def _sample(heights: np.ndarray, grads: np.ndarray, real: np.ndarray) -> tuple[float | None, bool]:
+    """Edge crossing on one profile, and whether the profile counts as real data.
+
+    A crossing that touches a filled-in (originally invalid) pixel is rejected:
+    filled pixels are pixel-quantised plateaus, and measuring them would bring
+    back the pixel-locking bias. Such profiles do not count as real samples.
+    """
+    p = edge_crossing(heights, grads)
+    if p is None:
+        return None, bool(real.all())
+    k = int(p)
+    if not (real[k] and real[min(k + 1, real.size - 1)]):
+        return None, False
+    return p, True
+
+
+def _edge_points(seg: tuple, vertical: bool, zs: np.ndarray, g: np.ndarray, real: np.ndarray,
+                 half: int, margin: int) -> tuple[list[tuple[float, float]], int]:
+    """Sub-pixel edge points along one Hough segment and the number of real samples.
 
     Samples closer than ``margin`` px to the image border are skipped: there
-    the smoothing used by Canny is affected by the border.
+    the smoothing used by Canny is affected by the border. ``real`` marks pixels
+    holding measured (not filled-in) data.
     """
     (x0, y0), (x1, y1) = seg
     rows, cols = zs.shape
     pts: list[tuple[float, float]] = []
+    n_real = 0
     if vertical:
         lo, hi = sorted((y0, y1))
-        samples = range(max(lo + 2, margin), min(hi - 1, rows - margin))
-        for r in samples:
+        for r in range(max(lo + 2, margin), min(hi - 1, rows - margin)):
             c0 = int(round(x0 + (r - y0) * (x1 - x0) / (y1 - y0)))
             if c0 - half < 0 or c0 + half >= cols:
                 continue
-            p = edge_crossing(zs[r, c0 - half:c0 + half + 1], g[r, c0 - half:c0 + half + 1])
+            win = slice(c0 - half, c0 + half + 1)
+            p, counted = _sample(zs[r, win], g[r, win], real[r, win])
+            n_real += counted
             if p is not None:
                 pts.append((c0 - half + p, float(r)))
     else:
         lo, hi = sorted((x0, x1))
-        samples = range(max(lo + 2, margin), min(hi - 1, cols - margin))
-        for c in samples:
+        for c in range(max(lo + 2, margin), min(hi - 1, cols - margin)):
             r0 = int(round(y0 + (c - x0) * (y1 - y0) / (x1 - x0)))
             if r0 - half < 0 or r0 + half >= rows:
                 continue
-            p = edge_crossing(zs[r0 - half:r0 + half + 1, c], g[r0 - half:r0 + half + 1, c])
+            win = slice(r0 - half, r0 + half + 1)
+            p, counted = _sample(zs[win, c], g[win, c], real[win, c])
+            n_real += counted
             if p is not None:
                 pts.append((float(c), r0 - half + p))
-    return pts, len(samples)
+    return pts, n_real
 
 
 def _runs_along_border(x0: int, y0: int, x1: int, y1: int, vertical: bool, rows: int,
@@ -175,7 +195,7 @@ def estimate_rotation(z_leveled: np.ndarray, config: Config) -> RotationResult:
     RotationError
         If no straight edge survives the checks (e.g. a featureless scan).
     """
-    zf = fill_invalid(z_leveled)[0]
+    zf, real = fill_invalid(z_leveled)
     sigma_px = config.px(config.rotation_canny_sigma_um)
     edges = canny(zf, sigma=sigma_px, low_threshold=config.rotation_canny_low,
                   high_threshold=config.rotation_canny_high, mode="nearest")
@@ -202,8 +222,8 @@ def estimate_rotation(z_leveled: np.ndarray, config: Config) -> RotationResult:
         vertical = abs(y1 - y0) > abs(x1 - x0)
         if _runs_along_border(x0, y0, x1, y1, vertical, rows, cols, margin):
             continue  # border artefact, not a structure edge
-        pts, n_samples = _edge_points(((x0, y0), (x1, y1)), vertical, zs, g, half, margin)
-        if n_samples < 3 or len(pts) < max(3, config.rotation_min_valid_fraction * n_samples):
+        pts, n_real = _edge_points(((x0, y0), (x1, y1)), vertical, zs, g, real, half, margin)
+        if n_real < 3 or len(pts) < max(3, config.rotation_min_valid_fraction * n_real):
             continue
         angle, rms = line_angle(np.array(pts), vertical)
         if rms > config.rotation_max_line_rms_px:

@@ -56,6 +56,19 @@ def test_noisy_dome_radius_unbiased_but_flagged_by_nrms():
     assert abs(x.rx_um - 820) < 3 * x.rx_ci95_um + 1.0
 
 
+def test_fit_failure_in_summary_is_reported_not_raised(monkeypatch):
+    import teramount_analysis.xpander as xpander_module
+    from teramount_analysis.errors import FitError
+
+    def singular(*args, **kwargs):
+        raise FitError("quadric has no unique vertex (singular Hessian)")
+
+    monkeypatch.setattr(xpander_module, "_summarise", singular)
+    z, _ = make_scan()
+    x = run_xpander(z, 0.0)
+    assert not x.found and "vertex" in x.reason
+
+
 def test_dome_cut_by_border_is_not_found():
     z, _ = make_scan(crop_top_um=60.0)  # top 60 µm removed: dome apex 20 µm from the border
     x = run_xpander(z, 0.0)

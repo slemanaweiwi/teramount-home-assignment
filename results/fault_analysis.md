@@ -19,7 +19,7 @@ dataset, its twin gives the noise-free reference.
 | Pivot step | 18.114–18.226 µm |
 | Radii | Rx 811.7–843.8 µm, Ry 817.9–838.0 µm |
 | Cross offset from the channel axis | ≤ 0.61 µm |
-| Apex offset from the channel axis | ≤ 0.80 µm |
+| Apex offset from the channel axis | ≤ 0.81 µm |
 
 ## Task 1 — file 6.npy: Pivot and Xpander both noisy (faulty)
 
@@ -98,8 +98,9 @@ RMS).
   sits at another position (x ≈ 498–503 px instead of 511–521 px), the
   neighbouring structure on the left is missing, and the raw heights are about
   5 µm lower.
-  - Their Xpanders are slightly flatter along x: **Ry > Rx by 12–16 µm**
-    (1.5–1.9 %). Every other file has Rx > Ry by 4–6 µm (0.5–0.7 %).
+  - Their Xpanders are more strongly curved along x than along y:
+    **Ry exceeds Rx by 11.3–15.4 µm** (1.4–1.9 %). Every other file has the
+    opposite sign, Rx > Ry by 3.4–7.7 µm (0.4–0.9 %).
   - This is systematic, so it is most likely a die-position or process
     difference. It is within the 5 % astigmatism limit and the nominal radius
     tolerance, so it is reported but not flagged.
@@ -109,5 +110,6 @@ RMS).
   than on files 0–10 (18.11–18.19 µm). This is a small systematic difference,
   within tolerance.
 - **No element is missing**, no cross or apex is off the channel axis (worst
-  0.61 / 0.80 µm), and the Pivot planes are parallel within 0.42° in every
-  file.
+  0.61 / 0.81 µm), and the Pivot planes are parallel within 0.28° in every
+  dataset-1 file. In dataset 2 the worst is 0.42°, on the noisy Pivot of
+  file 7.
