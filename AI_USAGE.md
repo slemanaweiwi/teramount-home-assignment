@@ -56,32 +56,54 @@ in `docs/design.md` §12:
 
 ## Prompts — Claude Code
 
-All prompts typed by the candidate in the Claude Code session, in order.
-Times are UTC on 15 Nov 2026.
+All prompts the candidate sent in the Claude Code session, in order. Times are
+UTC on 15 Nov 2026.
 
-- The **prompt** column is the exact text, typos included, because the
-  assignment asks for the prompts that were actually used.
-- The **request** column states each one in plain terms.
+The prompts below are **edited for spelling, grammar and clarity**; their
+meaning is unchanged. The exact original wording is at the end of this file.
 
-| # | Time | Prompt (exact text) | Request |
-|---|---|---|---|
-| 1 | 13:33 | `hi , do you know teramount ?` | Background on Teramount and its technology. |
-| 2 | 13:37 | `yes read the assismint and tell me what is this assigmint please` | Read the assignment document and summarise the task. |
-| 3 | 13:44 | `for now install the required stuff` | Set up the Python environment and dependencies. |
-| 4 | 13:49 | `yes do the design , this i want this to be profiistional and you do you maximum to give the best resutls please` | Produce a professional design aimed at the best possible results. |
-| 5 | 13:51 | `idk , iam applying for a software enginner position` | Context: the role applied for is software engineer. |
-| 6 | 13:51 | `yes but read the doc first to understand what they are asking for , the code will be tested on this data set and real data set` | Base everything on the assignment's requirements. The code must also work on an unseen dataset. |
-| 7 | 14:13 | `a few days, maybe i need to explain it idk why ? but i can use ai to solve it and use what ever i want` | Constraints: a few days available, the solution may have to be explained, and any tools are allowed. |
-| 8 | 14:27 | `i used chat gpt to review the design , he wrote me this iwhile brainstorming , [pasted: ChatGPT's full review of docs/design.md — summarised in the table above] , what do you think about what he sees ? notice that chatgpt dies not have the assigmn he has only the design` | Evaluate ChatGPT's independent review of the design, which it made without seeing the assignment. |
-| 9 | 14:32 | `yes do it` | Approve the revised design and proceed to the implementation plan. |
-| 10 | 15:40 | `yes go with native, start building ,how much will it take ??` | Approve the plan, build it in this session, and estimate the time. |
-| 11 | 16:23 | `how much you will take ??` | Ask for a time estimate. |
-| 12 | 17:06 | `how much time left until the review finishes?` | Ask for the status of the final code review. |
-| 13 | 17:08 | `use the promts and inhence them to look profisinal , i used chat gpt to brain storm how to solve the problem` | Improve the presentation of this file, and record that ChatGPT was also used for brainstorming. |
+| # | Time | Prompt |
+|---|---|---|
+| 1 | 13:33 | Hi, are you familiar with Teramount? |
+| 2 | 13:37 | Yes. Please read the assignment and explain what it asks for. |
+| 3 | 13:44 | For now, please install the required dependencies. |
+| 4 | 13:49 | Yes, please create the design. I want it to be professional, so please do your best to achieve the best possible results. |
+| 5 | 13:51 | I'm not sure. I'm applying for a software engineer position. |
+| 6 | 13:51 | Yes, but first read the assignment document to understand what is being asked. The code will be tested on this dataset and on an additional real dataset. |
+| 7 | 14:13 | A few days. I may need to explain the solution, though I'm not sure why. I'm allowed to use AI and any tools I want. |
+| 8 | 14:27 | I used ChatGPT to review the design while brainstorming; its review is below. What do you think of its feedback? Note that ChatGPT did not have the assignment, only the design. *[ChatGPT's full review of `docs/design.md` was pasted here; it is summarised in the table above.]* |
+| 9 | 14:32 | Yes, go ahead. |
+| 10 | 15:40 | Yes, use native execution and start building. How long will it take? |
+| 11 | 16:23 | How long will it take? |
+| 12 | 17:06 | How much time is left until the review finishes? |
+| 13 | 17:08 | Please present the prompts more professionally. Also, I used ChatGPT to brainstorm how to solve the problem. |
+| 14 | 17:12 | Here is the link to the ChatGPT conversation. As I said, please write the prompts in a more professional way. |
 
 ## Prompts — ChatGPT
 
-> **To add (candidate):** the messages sent to ChatGPT, exactly as typed, for
-> both the brainstorming and the design review. The simplest way: in ChatGPT
-> open the conversation, click **Share**, and paste the link here. Or copy
-> the messages below.
+The full ChatGPT conversation (brainstorming and design review), with every
+prompt and reply:
+
+**https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44**
+
+<details>
+<summary>Original wording of the Claude Code prompts (exact text, typos included)</summary>
+
+| # | Prompt (exact text) |
+|---|---|
+| 1 | `hi , do you know teramount ?` |
+| 2 | `yes read the assismint and tell me what is this assigmint please` |
+| 3 | `for now install the required stuff` |
+| 4 | `yes do the design , this i want this to be profiistional and you do you maximum to give the best resutls please` |
+| 5 | `idk , iam applying for a software enginner position` |
+| 6 | `yes but read the doc first to understand what they are asking for , the code will be tested on this data set and real data set` |
+| 7 | `a few days, maybe i need to explain it idk why ? but i can use ai to solve it and use what ever i want` |
+| 8 | `i used chat gpt to review the design , he wrote me this iwhile brainstorming , [pasted ChatGPT review] , what do you think about what he sees ? notice that chatgpt dies not have the assigmn he has only the design` |
+| 9 | `yes do it` |
+| 10 | `yes go with native, start building ,how much will it take ??` |
+| 11 | `how much you will take ??` |
+| 12 | `how much time left until the review finishes?` |
+| 13 | `use the promts and inhence them to look profisinal , i used chat gpt to brain storm how to solve the problem` |
+| 14 | `https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44, but i as i told you write the promts in more profinsinla way` |
+
+</details>
