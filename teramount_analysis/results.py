@@ -32,7 +32,8 @@ METRIC_COLUMNS: tuple[str, ...] = (
     "xpander_apex_x_px", "xpander_apex_y_px", "xpander_apex_u_px", "xpander_apex_v_px",
     "xpander_apex_z_um", "xpander_apex_axis_offset_um", "xpander_rx_um", "xpander_ry_um",
     "xpander_rx_ci95_um",
-    "xpander_ry_ci95_um", "xpander_r1_um", "xpander_r2_um", "xpander_principal_angle_deg",
+    "xpander_ry_ci95_um", "xpander_rx_u95_um", "xpander_ry_u95_um", "xpander_r1_um",
+    "xpander_r2_um", "xpander_principal_angle_deg",
     "xpander_rms_um", "xpander_outlier_pct", "xpander_local_feature_um2", "xpander_nrms_pct",
     "xpander_r_squared",
     "xpander_sag_um",
@@ -136,4 +137,9 @@ class ScanResult:
                 xpander_r_sphere_um=x.r_sphere_um, xpander_rx_profile_um=x.rx_profile_um,
                 xpander_ry_profile_um=x.ry_profile_um, xpander_stability_pct=x.stability_pct,
             )
+            # Total uncertainty of R: the fit's statistical CI plus half the spread of R
+            # over smaller fit areas (the model part), as proposed in ANSWERS.md §2.4.
+            for axis, radius, ci in (("x", x.rx_um, x.rx_ci95_um), ("y", x.ry_um, x.ry_ci95_um)):
+                m[f"xpander_r{axis}_u95_um"] = float(np.hypot(
+                    ci, x.stability_pct / 100.0 * radius / 2.0))
         return m

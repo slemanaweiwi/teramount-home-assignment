@@ -28,7 +28,7 @@ def write_csv(results: Sequence[ScanResult], path: Path, config: Config) -> None
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as fh:
-        writer = csv.writer(fh)
+        writer = csv.writer(fh, lineterminator="\n")  # LF, as stored in git
         writer.writerow(CSV_COLUMNS)
         for r in results:
             metrics = r.metrics(config)

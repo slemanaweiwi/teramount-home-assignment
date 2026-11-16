@@ -159,14 +159,14 @@ coordinates transformed into the corrected frame.
 
 | Group | Columns |
 |---|---|
-| Identity | `file`, `status` (`ok` / `partial` / `failed`), `error`, `warnings` (limits of the analysis, never a fault: `rotation_not_measured`, `scan_line_streaks_removed`, `scan_line_glitch`, `xpander_outliers_removed` when more than 1 % of the dome pixels were dropped) |
+| Identity | `file`, `status` (`ok` / `partial` / `failed`), `error`, `warnings` (limits of the analysis, never a fault: `rotation_not_measured`, `scan_line_streaks_removed`, `scan_line_glitch`, `xpander_aperture_at_border` (the image border, not the dome's own boundary, limited the fit area), `xpander_outliers_removed` when more than 1 % of the dome pixels were dropped) |
 | Data quality | `streak_level_um` (scan-line streaks found; removed above 0.01 µm) |
 | Tilt | `tilt_x_deg`, `tilt_y_deg` (slope angles along x and y), `tilt_total_deg`, `tilt_azimuth_deg`, `base_rms_um` |
 | Rotation | `rotation_deg`, `rotation_se_deg` (standard error), `rotation_lines` (edges used) |
 | Pivot | `pivot_height_diff_um` (crosses excluded), `pivot_height_diff_with_crosses_um` (for comparison), `plane1_rms_um`, `plane2_rms_um`, `plane_parallelism_deg`, `plane1_local_feature_um2`, `plane2_local_feature_um2` (largest bump or pit: dust or a defect) |
 | Crosses (1 = plane 1, 2 = plane 2) | `crossN_x_px`, `crossN_y_px`, `crossN_x_um`, `crossN_y_um`, `crossN_u_px`, `crossN_v_px`, `crossN_depth_um`, `crossN_axis_offset_um` |
 | Xpander position | `xpander_apex_x_px`, `xpander_apex_y_px`, `xpander_apex_u_px`, `xpander_apex_v_px`, `xpander_apex_z_um`, `xpander_apex_axis_offset_um` |
-| Xpander curvature | `xpander_rx_um`, `xpander_ry_um`, `xpander_rx_ci95_um`, `xpander_ry_ci95_um`, `xpander_r1_um`, `xpander_r2_um`, `xpander_principal_angle_deg` |
+| Xpander curvature | `xpander_rx_um`, `xpander_ry_um`, `xpander_rx_ci95_um`, `xpander_ry_ci95_um` (statistical 95 % interval), `xpander_rx_u95_um`, `xpander_ry_u95_um` (total uncertainty: the interval plus the dependence on the fit area, see ANSWERS §2.4), `xpander_r1_um`, `xpander_r2_um`, `xpander_principal_angle_deg` |
 | Xpander fit quality | `xpander_rms_um` (after outliers are dropped), `xpander_outlier_pct` (share of dome pixels dropped as spikes or dust), `xpander_local_feature_um2` (largest bump or pit: dust or a defect), `xpander_nrms_pct` (RMS / sag), `xpander_r_squared`, `xpander_sag_um`, `xpander_aperture_radius_um`, `xpander_stability_pct` |
 | Xpander cross-checks | `xpander_r_sphere_um`, `xpander_rx_profile_um`, `xpander_ry_profile_um` |
 | Faults | `geometric_flags`, `nominal_flags`, `statistical_flags` (`;`-separated), `faulty` (`yes` when a geometric or nominal check failed) |
@@ -189,7 +189,7 @@ Each figure (`results/figures/<name>/<scan>.png`) has six panels:
 py -m pip install -r requirements-dev.txt
 py -m pytest                                   # everything (20-30 min, includes the real data)
 py -m pytest -m "not slow and not realdata"    # quick run (5-10 min)
-py -m pytest --cov=teramount_analysis          # with line coverage (99.7 %)
+py -m pytest --cov=teramount_analysis          # with line coverage (99.8 %)
 py -m ruff check .                             # lint
 ```
 

@@ -139,3 +139,11 @@ def test_local_features_are_faults_of_their_element():
                 xpander=dataclasses.replace(_xpander(), local_feature_um2=9.0))
     assert {"plane1_local_feature", "xpander_local_feature"} <= set(geometric_flags(r, Config()))
     assert FaultReport(geometric_flags(r, Config())).faulty
+
+
+def test_unmeasured_rotation_does_not_produce_off_axis_faults():
+    # Without the rotation the axis is not known: an analysis limit, not a chip defect.
+    r = _result(rotation=None, warnings=("rotation_not_measured",),
+                cross1=_cross(offset_um=2.0), xpander=_xpander(offset=5.0))
+    flags = geometric_flags(r, Config())
+    assert "cross1_off_axis" not in flags and "apex_off_axis" not in flags

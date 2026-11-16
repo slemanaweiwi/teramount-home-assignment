@@ -212,3 +212,20 @@ def test_clean_scan_reports_its_streak_level_without_correcting():
     z, _ = make_scan()
     r = analyse_scan(z, Config())
     assert r.metrics(Config())["streak_level_um"] < 0.005 and r.warnings == ()
+
+
+def test_aperture_limited_by_the_image_border_gives_a_warning():
+    # Near the border the fit area shrinks and R depends 0.4-2 % on the fit area.
+    r = analyse_scan(make_scan(crop_top_um=44.0)[0], Config())
+    assert r.xpander.found and r.xpander.border_limited
+    assert "xpander_aperture_at_border" in r.warnings and not r.faults.faulty
+
+
+def test_clean_scan_has_no_border_warning_and_reports_u95():
+    r = analyse_scan(make_scan()[0], Config())
+    m = r.metrics(Config())
+    assert not r.xpander.border_limited and r.warnings == ()
+    for axis in ("x", "y"):
+        ci, radius = m[f"xpander_r{axis}_ci95_um"], m[f"xpander_r{axis}_um"]
+        expected = np.hypot(ci, m["xpander_stability_pct"] / 100 * radius / 2)
+        assert m[f"xpander_r{axis}_u95_um"] == pytest.approx(expected) and expected > ci

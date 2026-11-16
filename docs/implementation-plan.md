@@ -1,6 +1,7 @@
 # Teramount Topography Analysis — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Historical document:** the 17-task build plan, followed test-first. The code,
+> `README.md` and `ANSWERS.md` describe the final result.
 
 **Goal:** A tested Python package + one-command CLI that labels the Pivot and Xpander in 3D topography scans, corrects tilt/rotation, extracts all requested parameters with quality metrics and fault flags, and writes a CSV, per-scan diagnostic figures, and the written answers.
 
@@ -849,7 +850,7 @@ def test_planted_faults_flagged(t1_results, t2_results):
     assert not (noisy & flags(t1_results[3])) and not (noisy & flags(t1_results[13])) and not (noisy & flags(t1_results[7]))
 ```
 
-- [ ] **Step 2: Run** — `py -m pytest tests/test_real_data.py -v` → PASS. When a test fails, debug the pipeline (superpowers:systematic-debugging). Do not loosen a tolerance or a `Config` limit just to pass; the only allowed `Config` change is the nominal spec being re-estimated as the median of the clean files, if the final pipeline's median differs from the defaults by more than 10 % of the tolerance. Record any such change in the README.
+- [ ] **Step 2: Run** — `py -m pytest tests/test_real_data.py -v` → PASS. When a test fails, find the root cause in the pipeline. Do not loosen a tolerance or a `Config` limit just to pass; the only allowed `Config` change is the nominal spec being re-estimated as the median of the clean files, if the final pipeline's median differs from the defaults by more than 10 % of the tolerance. Record any such change in the README.
 
 - [ ] **Step 3: Generate the deliverables** — `py run.py --data 15_files_task_1 --name task1` and `py run.py --data 15_files_task_2 --name task2` → `results/task1_results.csv`, `results/task2_results.csv`, 30 figures.
 

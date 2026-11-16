@@ -565,6 +565,9 @@ radius by its relative uncertainty:
 
 > **U(R) = √( CI₉₅² + (ΔR_aperture / 2)² ) / R**
 
+The CSV reports the numerator for each axis as `xpander_rx_u95_um` and
+`xpander_ry_u95_um`, so the grade can be recomputed from the program's output.
+
 - **CI₉₅** is the statistical part, from the fit covariance. It grows with the
   noise and shrinks with the number of points: ±0.11 µm on clean domes,
   ±2.1 µm on the noisy ones.
@@ -648,7 +651,7 @@ does not handle, and why.
 | Heights in µm, pixels of 0.252 µm | Confirmed by Teramount for the test data. | `--z-scale` and `--pixel-size`. Every size setting is in µm, so it scales; the tests also run at 0.35 and 0.5 µm/px. |
 | The chip family: a Pivot (two flat planes, a ramp between them, a recessed cross on each plane) with the Xpander dome along the same axis on the low side of the ramp | Confirmed as "similar"; true in all 30 scans. | The missing element is reported "not found" with the reason, never measured on the wrong structure. |
 | Plane 2 is the highest flat plateau lying fully inside the scan | True in all scans; the only other tall plateau (23.5 µm) is lower than plane 2 (31 µm). | A larger, taller flat object (big debris) would be taken for plane 2; the orientation or plane-1 search then fails with a clear reason. |
-| The chip axes are within ±10° of the image axes, up to a quarter turn | The microscope aligns the chip; dataset 2 is within ±1°. | No straight edge is found: warning `rotation_not_measured`, and the scan is analysed as unrotated. |
+| The chip axes are within ±10° of the image axes, up to a quarter turn | The microscope aligns the chip; dataset 2 is within ±1°. | No straight edge is found: warning `rotation_not_measured`, and the scan is analysed as unrotated. The cross and apex off-axis checks are then skipped, since the axis is not known: a limit of the analysis must not mark the chip faulty. |
 | The base is a plane (tilt only) | Base residual about 12 nm after the RANSAC plane. | A bowed base is not modelled; a bow with a radius above 1 m would change R by less than 0.7 µm, and the Pivot step is measured locally. |
 | The dome is smooth and convex, close to a paraboloid over the fit area | Sphere and paraboloid differ by ≤ 1.5 nm over the aperture; the exact sphere fit agrees within 0.09 %. | A non-convex dome is reported "surface not convex". |
 | Neighbouring domes are separated by valleys or steps | Layout of the chip; all scans. | The fit area is limited and the reason is reported. |
@@ -720,7 +723,12 @@ dataset 2), inside each radius's own uncertainty.
 - **Rotations further than 10° from a quarter turn** (see above).
 - **The aperture.** The radius depends slightly (0.4–2 %) on the fit area,
   because the real profile is not exactly a quadric. The fit area therefore
-  follows a fixed rule and is reported.
+  follows a fixed rule and is reported, and this dependence is included in the
+  reported total uncertainty (`xpander_r*_u95_um`). When the image border,
+  rather than the dome's own valley, limits the fit area (a channel near the
+  edge of the scan), R comes from a smaller part of the dome and can differ by
+  1–2 %: the warning `xpander_aperture_at_border` says so. On the provided scans
+  the valleys always set the fit area.
 
 ## Reproducing every number
 

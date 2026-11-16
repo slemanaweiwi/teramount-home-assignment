@@ -121,8 +121,11 @@ def _run(z: np.ndarray, config: Config, result: ScanResult) -> None:
                 for n, c in ((1, result.cross1), (2, result.cross2)) if not c.found]
     if not result.xpander.found:
         problems.append(f"xpander not found: {result.xpander.reason}")
-    elif result.xpander.outlier_pct > config.xpander_max_outlier_pct:
-        result.warnings = (*result.warnings, "xpander_outliers_removed")
+    else:
+        if result.xpander.outlier_pct > config.xpander_max_outlier_pct:
+            result.warnings = (*result.warnings, "xpander_outliers_removed")
+        if result.xpander.border_limited:  # R from a smaller part of the dome
+            result.warnings = (*result.warnings, "xpander_aperture_at_border")
     glitches = result.pivot.glitch_lines + (result.xpander.glitch_lines
                                             if result.xpander.found else 0.0)
     if glitches > 0:  # outliers shaped like a scan line recorded at the wrong height
