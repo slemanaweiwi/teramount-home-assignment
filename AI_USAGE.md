@@ -61,7 +61,7 @@ in `docs/design.md` §12:
 
 ## Prompts — Claude Code
 
-These are the prompts I gave Claude Code while developing the Teramount Home Assignment, in order. I edited their wording for readability; my original wording is in the record below.
+My prompts to Claude Code while developing the Teramount Home Assignment, in order. My original wording follows in the record below.
 
 ### 1. Understanding the Company
 
@@ -211,6 +211,54 @@ Please prepare a professional and transparent AI usage section for `AI_USAGE.md`
 The documentation should describe how Claude Code contributed to the development process, including data exploration, technical design, implementation, testing, debugging, and documentation.
 
 Please present the prompts used during the interactions in a professional, well-structured format. Do not invent technical decisions or claim that suggestions were implemented unless they were actually accepted and used.
+
+### 13. Preparing the AI Usage Disclosure
+
+**Prompt:**
+
+I need to prepare an AI usage disclosure as part of the assignment submission.
+
+Please create a professional and transparent `AI_USAGE.md` document describing how AI tools were used throughout the development process.
+
+The document should cover the actual contributions of Claude Code, including:
+
+- Understanding and analyzing the assignment.
+- Exploring the provided datasets.
+- Evaluating technical approaches.
+- Preparing the design document and implementation plan.
+- Implementing the solution and automated tests.
+- Debugging and validating the results.
+- Preparing the documentation and final deliverables.
+
+Also document the use of ChatGPT for brainstorming and independently reviewing the technical design.
+
+Include the prompts used during the development process in their original chronological order. Improve spelling, grammar, and readability where appropriate, but do not introduce requirements, technical decisions, or claims that were not part of the actual interactions.
+
+Clearly distinguish between suggestions that were accepted, rejected, or modified.
+
+The final document should accurately represent my use of AI tools while maintaining a professional and transparent account of the development process.
+
+### 14. Independent Final Review
+
+**Prompt:**
+
+**Assignment Review — Senior Software Engineer & Technical Evaluator**
+
+You are acting as a **Senior Software Engineer, Code Reviewer, and Technical Assignment Evaluator**.
+
+Your task is to thoroughly review my assignment as if you were evaluating it for submission to a university, technical interviewer, or professional engineering team.
+
+Your goal is to determine whether the assignment is correct, complete, well-implemented, properly tested, cleanly written, and ready for submission.
+
+**Critical rules:**
+
+1. **Do not modify anything.** This is a review-only task: inspect, analyze, test, and report.
+2. Do not assume the assignment is correct just because it runs.
+3. Be honest and critical.
+4. Do not invent problems; support every finding with evidence.
+5. Do not claim that tests passed unless you actually executed them.
+
+**Review phases:** (1) understand the assignment; (2) review the entire implementation; (3) review and execute the tests; (4) review test coverage and quality; (5) review the documentation; (6) check every assignment requirement; (7) give a final evaluation; (8) write a complete review report.
 
 ---
 
