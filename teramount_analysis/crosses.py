@@ -9,7 +9,8 @@ nearest the channel axis wins.
 
 The centre is the depth-weighted centroid of the original (non-interpolated)
 pixels, so it is accurate to a fraction of a pixel even though the cross
-outline is pixelated.
+outline is pixelated. A pixel's weight is capped just above the cross depth,
+so a deep spike inside the cross barely pulls the centre.
 """
 
 from __future__ import annotations
@@ -135,12 +136,16 @@ def _measure(z_leveled: np.ndarray, frame: Frame, plane: PlaneFit, mask: np.ndar
         u, v = u_all[rr, cc], v_all[rr, cc]
         return rr, cc, u, v, z_leveled[rr, cc] - plane.evaluate(u, v)
 
-    rr, cc, u, v, res = raw_residual(ndimage.binary_dilation(mask))
-    w = np.clip(sign * res, 0.0, None)
-    if w.sum() <= 0:
-        return NOT_FOUND
     core = ndimage.binary_erosion(mask)
     *_, res_core = raw_residual(core if core.any() else mask)
+    floor = np.abs(res_core)
+    depth = float(np.median(floor)) if floor.size else 0.0
+    spread = 1.4826 * float(np.median(np.abs(floor - depth))) if floor.size else 0.0
+    cap = depth + max(config.cross_depth_tol_um, 5.0 * spread)  # above any real floor pixel
+    rr, cc, u, v, res = raw_residual(ndimage.binary_dilation(mask))
+    w = np.clip(sign * res, 0.0, cap)  # a deep spike counts at most ~1.6x a floor pixel
+    if w.sum() <= 0:
+        return NOT_FOUND
     u_c = float(np.average(u, weights=w))
     return CrossResult(
         found=True,
@@ -148,7 +153,7 @@ def _measure(z_leveled: np.ndarray, frame: Frame, plane: PlaneFit, mask: np.ndar
         y_px=float(np.average(rr, weights=w)),
         u_px=u_c,
         v_px=float(np.average(v, weights=w)),
-        depth_um=float(np.median(np.abs(res_core))),
+        depth_um=depth,
         area_um2=float(rp.area * config.pixel_size_um**2),
         solidity=float(rp.solidity),
         axis_offset_um=abs(u_c - axis_u) * config.pixel_size_um,

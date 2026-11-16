@@ -47,6 +47,22 @@ def smooth(z: np.ndarray, sigma_px: float, median_px: int = 0) -> np.ndarray:
     return out
 
 
+def remove_small_bumps(z: np.ndarray, size_px: int) -> np.ndarray:
+    """Remove raised features narrower than ``size_px`` (dust particles).
+
+    A grey opening with a flat ``size_px`` square: it cuts every peak the
+    square cannot fit under and leaves valleys, slopes and steps exactly as
+    they are, so the valleys that separate neighbouring domes keep their
+    position. Pits are deliberately left alone (dust is raised; single-pixel
+    pits are removed by a median filter first). The result is only used to
+    *find* structures; measurements use the original heights.
+    """
+    out = np.asarray(z, dtype=np.float64)
+    if size_px < 2:
+        return out.copy()
+    return ndimage.grey_opening(out, size=(size_px, size_px), mode="nearest")
+
+
 def slope(z: np.ndarray, pixel_size_um: float) -> np.ndarray:
     """Magnitude of the surface gradient in µm per µm (heights in µm)."""
     gy, gx = np.gradient(z)

@@ -74,3 +74,14 @@ def test_failed_scan_figure_written(tmp_path):
     r = analyse_scan(np.zeros((300, 300)), Config(), "flat")
     save_scan_figure(r, tmp_path / "flat.png", Config())
     assert (tmp_path / "flat.png").stat().st_size > 5_000
+
+
+def test_figure_marks_the_dropped_dome_pixels(tmp_path):
+    from synthetic import add_particle
+
+    z, t = make_scan()
+    ax, ay = t.apex_xy_px
+    r = analyse_scan(add_particle(z, (ax + 80, ay + 60), 3.0, 3.0), Config(), "dust")
+    assert r.xpander.outlier_map is not None and r.xpander.outlier_map.sum() > 100
+    save_scan_figure(r, tmp_path / "dust.png", Config())
+    assert (tmp_path / "dust.png").stat().st_size > 20_000

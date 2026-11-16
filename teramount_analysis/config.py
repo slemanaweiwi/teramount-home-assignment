@@ -31,11 +31,17 @@ class Config:
     correct_tilt: bool = True  # subtract the fitted base plane (False: offset only)
     correct_rotation: bool = True  # measure and undo the in-plane rotation
     random_seed: int = 0  # seed for every random choice (RANSAC, Hough)
+    correct_streaks: bool = True  # remove scan-line streaks when clearly present
 
     # --- Segmentation surface ------------------------------------------------
     seg_median_um: float = 1.26  # median pre-filter size [µm] (spike noise; 5 px)
     seg_sigma_um: float = 1.0  # Gaussian smoothing for segmentation [µm]
     flat_slope_max: float = 0.25  # max slope of a "flat" pixel [µm/µm]
+
+    # --- Scan-line streaks ---------------------------------------------------
+    streak_min_um: float = 0.01  # streaks below this are left alone (clean scans: <= 3 nm) [µm]
+    streak_noise_factor: float = 4.0  # ...and below this many times the noise floor
+    streak_trend_um: float = 2.0  # sigma of the running mean that keeps the surface trend [µm]
 
     # --- Tilt (RANSAC base plane) --------------------------------------------
     ransac_iterations: int = 300  # number of 3-point plane hypotheses
@@ -75,6 +81,10 @@ class Config:
     cross_median_um: float = 0.756  # median de-noising before the threshold [µm] (3 px)
     cross_sigma_um: float = 0.252  # Gaussian de-noising before the threshold [µm] (1 px)
     cross_margin_um: float = 0.5  # cross outline grown by this before plane fits [µm]
+    # In the depth-weighted centroid no pixel counts for more than the cross depth plus
+    # max(this, 5 x the floor's noise), so a deep spike barely pulls the centre. Real
+    # cross floors reach 0.66 µm below their median depth (1.4 µm on a noisy plane) [µm].
+    cross_depth_tol_um: float = 1.0
     cross_area_min_um2: float = 5.0  # cross area lower bound [µm²]
     cross_area_max_um2: float = 100.0  # cross area upper bound [µm²]
     cross_solidity_min: float = 0.75  # area / convex-hull area lower bound
@@ -84,6 +94,11 @@ class Config:
 
     # --- Xpander -------------------------------------------------------------
     xpander_smooth_um: float = 2.0  # smoothing for apex and boundary search [µm]
+    # Dust particles narrower than this are removed (grey opening) from the copy
+    # used to find the apex and the dome boundary; the fit then drops them as outliers.
+    xpander_particle_um: float = 10.0
+    # The dome search covers the scan down to this far below the top of plane 1 [µm].
+    xpander_rows_below_plane1_um: float = 20.0
     xpander_search_um: float = 250.0  # search distance beyond plane 1 [µm]
     xpander_min_prominence_um: float = 0.5  # minimum dome prominence [µm]
     xpander_refine_um: float = 15.0  # apex refinement window half-size [µm]
@@ -94,6 +109,19 @@ class Config:
     xpander_min_aperture_um: float = 20.0  # smaller apertures are rejected [µm]
     xpander_fit_iterations: int = 3  # fit / re-centre iterations
     xpander_stability_fractions: tuple[float, ...] = (0.5, 0.75, 1.0)  # aperture scan
+    # Outlier pixels (spikes, dust, local features) are dropped from the dome and Pivot
+    # plane fits when their residual exceeds max(clip_sigma x robust sigma, clip_min). The
+    # floor lies above the residual pattern of a clean dome (about +-40 nm), so clean data
+    # loses nothing, and the sigma term scales with real roughness, so a noisy surface is
+    # never "cleaned".
+    outlier_clip_sigma: float = 5.0  # [robust standard deviations]
+    outlier_clip_min_um: float = 0.1  # [µm]
+    xpander_max_outlier_pct: float = 1.0  # more dropped pixels than this: warning [%]
+    # A compact cluster of dropped pixels at least this large is a local feature (dust or
+    # a defect: a bump or a pit), reported as a fault of its element; it is excluded from
+    # the fit together with a ring of feature_margin_um around it [µm², µm].
+    feature_min_um2: float = 1.0
+    feature_margin_um: float = 3.0
 
     # --- Nominal spec --------------------------------------------------------
     # Estimated from the clean files of the provided datasets; override via CLI.

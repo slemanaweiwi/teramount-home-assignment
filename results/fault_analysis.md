@@ -40,11 +40,12 @@ outliers on the same metrics).
 
 **Xpander:**
 
-- Fit RMS is 231 nm (nRMS 16.0 %, R² 0.765), against 7–9 nm on clean domes.
+- Fit RMS is 231 nm (nRMS 16.2 %, R² 0.759), against 7–9 nm on clean domes.
 - The noise is **uniform between −0.4 and +0.4 µm**: std 0.231 µm, kurtosis
   −1.20. It is spatially white (figure: grainy residual map, no pattern).
-- **The radius survives the noise.** Rx/Ry = 833.4 / 827.5 µm against
-  833.8 / 830.5 µm on the clean twin, within the 95 % CI of ±3.2 µm.
+- **The radius survives the noise.** Rx/Ry = 833.0 / 827.0 µm against
+  834.0 / 830.3 µm on the clean twin: 1.0 µm apart in Rx (inside the 95 % CI
+  of ±3.3 µm) and 3.28 µm in Ry (just outside its ±3.26 µm), below 0.4 % in both.
 
 **Verdict:** both elements carry strong surface noise (or measurement
 artefacts). On a Pivot whose planes are flat to about 50 nm, ±1 µm of noise
@@ -83,9 +84,9 @@ RMS).
 
 **Flags:** `xpander_surface_noisy` (statistical `xpander_rms_um_outlier`).
 
-- Fit RMS is 154 nm (nRMS 10.6 %, R² 0.880), with the same grid texture and
+- Fit RMS is 154 nm (nRMS 10.7 %, R² 0.878), with the same grid texture and
   the same ±0.40 µm bounds as task 2 file 3.
-- **Measurement:** Rx/Ry = 829.8 / 822.1 µm against 829.1 / 822.7 µm on the
+- **Measurement:** Rx/Ry = 830.1 / 822.3 µm against 829.1 / 822.7 µm on the
   clean twin.
 - Plane 2 is unusually *smooth* (20 nm against 22–25 nm). That is not a
   defect, so it is not flagged: for roughness and axis offsets the

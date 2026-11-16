@@ -2,6 +2,7 @@
 
 Steps for one scan:
 
+0. **Streaks** — remove scan-line streaks when clearly present.
 1. **Tilt** — fit the base plane and subtract it (heights become relative to
    the base, which also removes any absolute height offset).
 2. **Rotation** — measure the in-plane rotation from straight edges.
@@ -35,7 +36,8 @@ from .io import check_height_map, load_scan
 from .pivot import find_plane2, measure_pivot, quarter_turns_for, ramp_direction, segment_pivot
 from .results import FaultReport, ScanDebug, ScanResult
 from .rotation import estimate_rotation
-from .surface import segmentation_surface
+from .streaks import remove_streaks
+from .surface import flat_mask, segmentation_surface
 from .tilt import fit_base_plane, remove_tilt
 from .xpander import measure_xpander
 
@@ -67,7 +69,11 @@ def analyse_scan(z: np.ndarray, config: Config, name: str = "") -> ScanResult:
 def _run(z: np.ndarray, config: Config, result: ScanResult) -> None:
     """Fill ``result`` step by step; raises AnalysisError on a blocking problem."""
     z = check_height_map(z, result.file or "scan")
-    result.tilt = fit_base_plane(z, config)
+    flat = flat_mask(segmentation_surface(z, config), config)  # shared: one smoothing pass
+    z, result.streaks = remove_streaks(z, config, flat)
+    if result.streaks.corrected:
+        result.warnings = (*result.warnings, "scan_line_streaks_removed")
+    result.tilt = fit_base_plane(z, config, flat)
     z_leveled = remove_tilt(z, result.tilt, config)
     result.debug = ScanDebug(z_leveled)
 
@@ -115,6 +121,12 @@ def _run(z: np.ndarray, config: Config, result: ScanResult) -> None:
                 for n, c in ((1, result.cross1), (2, result.cross2)) if not c.found]
     if not result.xpander.found:
         problems.append(f"xpander not found: {result.xpander.reason}")
+    elif result.xpander.outlier_pct > config.xpander_max_outlier_pct:
+        result.warnings = (*result.warnings, "xpander_outliers_removed")
+    glitches = result.pivot.glitch_lines + (result.xpander.glitch_lines
+                                            if result.xpander.found else 0.0)
+    if glitches > 0:  # outliers shaped like a scan line recorded at the wrong height
+        result.warnings = (*result.warnings, "scan_line_glitch")
     result.status = "partial" if problems else "ok"
     result.error = "; ".join(problems)
 

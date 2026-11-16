@@ -210,3 +210,39 @@ def make_scan(
         plane2_center_xy_px=where(xc, sum(PLANE2_Y_UM) / 2),
     )
     return z, truth
+
+
+# --------------------------------------------------------------------------- artefacts
+# Measurement artefacts of real optical profilometers, added to a finished scan.
+# Each returns a new array; positions are in pixels of that scan.
+
+
+def add_spikes(z: np.ndarray, fraction: float, seed: int = 0,
+               height_um: tuple[float, float] = (2.0, 10.0)) -> np.ndarray:
+    """Single-pixel spikes of random sign (dust glints, bad pixels)."""
+    rng = np.random.default_rng(seed)
+    out = z.copy()
+    idx = rng.choice(z.size, int(round(fraction * z.size)), replace=False)
+    out.flat[idx] += rng.choice([-1.0, 1.0], idx.size) * rng.uniform(*height_um, idx.size)
+    return out
+
+
+def add_particle(z: np.ndarray, xy_px: tuple[float, float], radius_um: float,
+                 height_um: float, pixel_size_um: float = 0.252) -> np.ndarray:
+    """A dust particle: a spherical-cap bump of the given radius and height."""
+    rows, cols = np.indices(z.shape, dtype=float)
+    r2 = ((cols - xy_px[0]) ** 2 + (rows - xy_px[1]) ** 2) * pixel_size_um**2
+    bump = height_um * np.sqrt(np.clip(1.0 - r2 / radius_um**2, 0.0, None))
+    return z + bump
+
+
+def add_streaks(z: np.ndarray, std_um: float, seed: int = 0) -> np.ndarray:
+    """Scan-line streaks: every row offset by its own random height."""
+    rng = np.random.default_rng(seed)
+    return z + rng.normal(0.0, std_um, (z.shape[0], 1))
+
+
+def add_edge_overshoot(z: np.ndarray, gain: float, sigma_px: float = 3.0) -> np.ndarray:
+    """'Batwing' ringing at steep edges: overshoot on the high side, undershoot below."""
+    filled = np.where(np.isfinite(z), z, 0.0)
+    return z + gain * (filled - ndimage.gaussian_filter(filled, sigma_px))

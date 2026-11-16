@@ -131,3 +131,11 @@ def test_metrics_keys_match_columns():
     assert full["xpander_r_squared"] == pytest.approx(0.9996)
     assert full["xpander_aperture_radius_um"] == pytest.approx(49.0)
     assert full["rotation_lines"] == 30
+
+
+def test_local_features_are_faults_of_their_element():
+    r = _result(pivot=PivotResult(18.18, 18.0, 12.9, 31.08, 0.045, 0.025, 0.05,
+                                  plane1_feature_um2=4.0),
+                xpander=dataclasses.replace(_xpander(), local_feature_um2=9.0))
+    assert {"plane1_local_feature", "xpander_local_feature"} <= set(geometric_flags(r, Config()))
+    assert FaultReport(geometric_flags(r, Config())).faulty

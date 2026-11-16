@@ -69,3 +69,25 @@ def test_segmentation_surface_is_finite_with_nans():
 def test_fill_invalid_rejects_all_invalid(bad):
     with pytest.raises(ValueError):
         fill_invalid(bad)
+
+
+def test_remove_small_bumps_drops_dust_but_keeps_valleys_steps_and_domes():
+    from teramount_analysis.surface import remove_small_bumps
+
+    rows, cols = np.indices((200, 200), dtype=float)
+    dome = 5.0 - ((cols - 100) ** 2 + (rows - 100) ** 2) / 4000.0  # broad dome
+    valley = 0.05 * np.abs(cols - 160)  # a V valley at column 160 (no ridge on either side)
+    step = np.where(cols < 50, 0.0, 3.0)  # a step edge
+    z = dome + valley + step
+    dusty = z.copy()
+    dusty[60:65, 120:125] += 4.0  # a 5 px dust particle
+    clean = remove_small_bumps(dusty, 11)
+    err = np.abs(clean - z)
+    assert err[55:70, 115:130].max() < 0.25  # the particle is gone (was 4 um)
+    away = np.ones(z.shape, dtype=bool)  # away from the dust, the image edge and the step
+    away[40:85, 100:145] = False
+    away[:20] = away[180:] = away[:, :60] = away[:, 180:] = False
+    assert err[away].max() < 0.02  # the dome and the valley are kept
+    band = (slice(20, 180), slice(140, 181))  # the valley keeps its position on every row
+    assert np.array_equal(clean[band].argmin(axis=1), z[band].argmin(axis=1))
+    assert np.array_equal(remove_small_bumps(dusty, 1), dusty)

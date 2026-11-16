@@ -143,8 +143,16 @@ def _xpander_panels(ax_xp, ax_res, ax_prof, fig: Figure, zc: np.ndarray, xp, p: 
         img = ax_res.imshow(xp.residual_map[r0:r1, c0:c1] * 1000.0, cmap="RdBu_r",
                             vmin=-lim_nm, vmax=lim_nm, extent=extent)
         fig.colorbar(img, ax=ax_res, label="fit residual [nm]", shrink=0.85)
+    dropped_note = ""
+    if xp.outlier_map is not None and xp.outlier_map[r0:r1, c0:c1].any():
+        overlay = np.zeros((r1 - r0, c1 - c0, 4))
+        overlay[xp.outlier_map[r0:r1, c0:c1]] = (0.0, 0.0, 0.0, 1.0)  # dropped pixels: black
+        ax_res.imshow(overlay, extent=extent)
+        dropped_note = (f"\nblack: {xp.outlier_pct:.2f} % dropped "
+                        "(spikes, dust, local features)")
     ax_res.set_title(f"fit residual: RMS {xp.rms_um * 1000:.1f} nm, "
-                     f"nRMS {xp.nrms_pct:.2f} %, R² {xp.r_squared:.4f}", fontsize=10)
+                     f"nRMS {xp.nrms_pct:.2f} %, R² {xp.r_squared:.4f}{dropped_note}",
+                     fontsize=10)
 
     n = int(radius)
     us = np.arange(max(u0 - n, 0), min(u0 + n + 1, zc.shape[1]))
@@ -180,6 +188,7 @@ def _summary_text(result: ScanResult, config: Config) -> str:
         f" total    {f('tilt_total_deg', '.4f')} deg",
         f" rotation {f('rotation_deg', '+.3f')} +/- {f('rotation_se_deg', '.3f')} deg"
         f" ({f('rotation_lines', '.0f')} edges)",
+        f" scan-line streaks {f('streak_level_um', '.1f', 1000)} nm",
         "",
         "PIVOT",
         f" height diff   {f('pivot_height_diff_um', '.3f')} µm",
@@ -201,6 +210,7 @@ def _summary_text(result: ScanResult, config: Config) -> str:
         f" profile Rx/Ry  {f('xpander_rx_profile_um', '.1f')} /"
         f" {f('xpander_ry_profile_um', '.1f')}",
         f" RMS {f('xpander_rms_um', '.1f', 1000)} nm  nRMS {f('xpander_nrms_pct', '.2f')} %",
+        f" outlier pixels dropped {f('xpander_outlier_pct', '.2f')} %",
         f" R²  {f('xpander_r_squared', '.4f')}",
         f" stability over apertures {f('xpander_stability_pct', '.2f')} %",
         "",
