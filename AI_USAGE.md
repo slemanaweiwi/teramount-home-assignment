@@ -61,7 +61,7 @@ in `docs/design.md` §12:
 
 ## Prompts — Claude Code
 
-The following prompts represent the instructions provided to Claude Code throughout the development of the Teramount Home Assignment. They have been professionally edited for clarity, structure, and technical precision while preserving the intent and sequence of the original interactions.
+These are the prompts I gave Claude Code while developing the Teramount Home Assignment, in order. I edited their wording for readability; my original wording is in the record below.
 
 ### 1. Understanding the Company
 
@@ -216,9 +216,7 @@ Please present the prompts used during the interactions in a professional, well-
 
 ### Original Prompt Record
 
-The professionally edited prompts above are intended to improve readability and communicate the purpose of each interaction. They are not verbatim transcripts.
-
-The original wording, including spelling and grammatical errors, should be preserved separately below, unchanged.
+My prompts as I originally typed them, unchanged.
 
 **1.** 15 Nov, 13:33 UTC
 
