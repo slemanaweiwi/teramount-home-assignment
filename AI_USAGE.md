@@ -1,220 +1,323 @@
-# AI usage
+# AI Usage Disclosure
 
-The assignment allows AI tools if they are named and the prompts are
-included. This file lists the tools, what each was used for, and every
-prompt.
+## 1. AI Tools
 
-## Tools
+The following AI tools were used during the development of the Teramount Home Assignment.
 
-| Tool | Model | Used for |
+| Tool | Model | Purpose |
 |---|---|---|
-| **Claude Code** (Anthropic CLI agent) | Claude Opus 5.5 | Explaining the assignment; installing the Python packages; exploring the data with throwaway scripts; the design document (`docs/design.md`) and implementation plan (`docs/implementation-plan.md`); writing the code and tests (test-first, one task at a time); running the analysis; drafting `README.md`, `ANSWERS.md`, `results/fault_analysis.md` and this file. |
-| **ChatGPT** (OpenAI) | — | Brainstorming how to approach the problem, and an independent review of the design document. For the review it was given only the design, not the assignment. |
+| Claude Code | Claude Opus 5.5 | Assignment analysis, environment setup, data exploration, technical design, implementation planning, code development, testing, debugging, and documentation. |
+| ChatGPT | — | Brainstorming possible solution approaches and independently reviewing the technical design. ChatGPT was provided with the design document only, not the original assignment. |
 
-## How the work was done
+## 2. Development Process
 
-1. **Understanding.** Claude read the assignment (`.docx`, text and figures)
-   and summarised it.
-2. **Brainstorming and data exploration.** Solution approaches were
-   brainstormed with ChatGPT. With Claude Code, throwaway scripts that were
-   not kept were used to:
-   - plot all 30 scans and locate the elements;
-   - prototype each risky algorithm step on the real data;
-   - discover that dataset 2 is dataset 1 rotated and tilted;
-   - find the planted noisy elements.
+AI tools were used as development assistants throughout the assignment to support problem analysis, evaluate possible approaches, accelerate implementation, and improve code quality.
 
-   Several first ideas were rejected on evidence: a projection-based rotation
-   estimate, gradient-peak edge location, and edge-based dome segmentation.
-   The reasons are in `docs/design.md` and `ANSWERS.md` §2.2.
-3. **Design.** The design document was checked by a separate reviewer agent
-   and by ChatGPT (below), then approved by me.
-4. **Plan.** Claude Code wrote a 17-task implementation plan, which I
-   approved.
-5. **Implementation.** Each task was built test-first: write a failing test,
-   implement, pass, commit. Deviations from the plan were logged with their
-   reasons. The 30 real scans were used for validation at each step.
-6. **Validation and answers.**
-   - The full analysis was run on both datasets.
-   - All 30 diagnostic figures were inspected.
-   - Every number in `ANSWERS.md` was cross-checked against the CSVs.
-   - A fresh clone of the repository was run from the README instructions.
-   - A final independent code review was done.
-7. **Final polish.** At my request, the ten minor findings the
-   reviewer had left for later were addressed, each test-first. Nine were
-   fixed; one did not reproduce and got a regression test instead. The results
-   were then regenerated and compared cell by cell with the previous ones:
-   only the intended columns changed.
+### 2.1 Understanding the Assignment
 
-### ChatGPT's design review and what was done with it
+Claude Code was used to inspect the original assignment document, including its text and figures, and analyze the problem, input data, expected measurements, technical requirements, and deliverables.
 
-ChatGPT made five main recommendations. I passed them to Claude
-Code (original prompt 8 below), and Claude assessed each one; the outcome is recorded
-in `docs/design.md` §12:
+### 2.2 Brainstorming and Data Exploration
+
+Different approaches to solving the problem were explored before selecting the implementation strategy.
+
+Claude Code was used to create temporary exploration scripts that were not included in the final implementation. These scripts were used to:
+
+- Visualize all 30 scans and identify the relevant elements.
+- Experiment with potential algorithms using the actual data.
+- Investigate geometric transformations and differences between datasets.
+- Identify noisy elements and potential sources of measurement errors.
+
+Several initial approaches were evaluated and rejected based on their behavior on the actual data, including projection-based rotation estimation, gradient-peak edge detection, and edge-based dome segmentation.
+
+The reasoning behind these decisions is documented in `docs/design.md` and `ANSWERS.md`, Section 2.2.
+
+### 2.3 Technical Design
+
+Claude Code assisted in preparing the technical design document, covering the architecture, processing pipeline, algorithms, measurement methodology, fault detection, and validation strategy.
+
+The design was also reviewed independently using ChatGPT. ChatGPT received only the design document and did not have access to the original assignment.
+
+The recommendations were subsequently evaluated using Claude Code. Their acceptance or rejection was based on the assignment requirements and technical considerations.
+
+### 2.4 Implementation Planning
+
+Claude Code prepared a 17-task implementation plan based on the approved design.
+
+The plan was reviewed before implementation, and development proceeded incrementally, following the agreed architecture.
+
+### 2.5 Implementation and Testing
+
+Claude Code assisted with implementing the solution, writing automated tests, debugging, and improving the code.
+
+Development followed a test-first approach:
+
+1. Write a test for the functionality being implemented.
+2. Verify that the test fails when appropriate.
+3. Implement the required functionality.
+4. Run the relevant tests.
+5. Review the implementation before proceeding to the next task.
+
+The implementation was developed incrementally, with deviations from the original plan documented along with their reasoning.
+
+### 2.6 Validation and Final Review
+
+The final solution was validated through several checks:
+
+- The complete analysis was executed on both datasets.
+- All 30 diagnostic figures were inspected.
+- Numerical results in `ANSWERS.md` were cross-checked against the generated CSV files.
+- A fresh repository clone was used to verify execution using the README instructions.
+- An independent code review was performed.
+- Minor review findings were addressed individually, with tests added or updated where appropriate.
+- The final generated results were compared against the previous results to verify that only the intended output columns had changed.
+
+### 2.7 Documentation
+
+Claude Code assisted in preparing and refining the project documentation, including:
+
+- `README.md`
+- `ANSWERS.md`
+- `docs/design.md`
+- `docs/implementation-plan.md`
+- `results/fault_analysis.md`
+- `AI_USAGE.md`
+
+The documentation was checked against the actual implementation and generated results.
+
+## 3. Independent Design Review
+
+ChatGPT was used as an independent reviewer of the technical design.
+
+It was intentionally provided with the design document only, without access to the original assignment. This allowed the design to be evaluated from a separate perspective.
+
+The main recommendations and their outcomes were:
 
 | Recommendation | Outcome |
 |---|---|
-| Strengthen segmentation with geometric relationships, not height alone | **Accepted:** a consistency check of the labeling was added. |
-| Validate the rotation estimate | **Accepted:** an independent check via the element positions on the channel axis. |
-| Separate structural, nominal and statistical faults | **Accepted:** three separate flag columns. |
-| Avoid over-engineering | **Accepted:** dropped the Hough-only route and the bootstrap. |
-| Make the principal curvatures the main Xpander result | **Not accepted:** the assignment explicitly asks for the radius along X and Y. Principal radii are reported as an extra. |
+| Strengthen segmentation using geometric relationships rather than relying only on height. | **Accepted:** A consistency check of the labeling was added. |
+| Independently validate the rotation estimate. | **Accepted:** An additional validation using element positions along the channel axis was introduced. |
+| Separate structural, nominal, and statistical faults. | **Accepted:** Three separate flag columns were introduced. |
+| Avoid unnecessary complexity in the implementation. | **Accepted:** The Hough-only approach and bootstrap procedure were dropped. |
+| Make principal curvatures the primary Xpander result. | **Not accepted:** The assignment explicitly requires radii along X and Y. Principal radii are reported as additional information. |
 
-## Prompts — Claude Code
+The final decisions were incorporated into the technical design where appropriate.
 
-My prompts to Claude Code while developing the Teramount Home Assignment, in order. My original wording follows in the record below.
+## 4. Prompts — Claude Code
+
+The following prompts document the interactions used throughout the development of the Teramount Home Assignment, in chronological order.
 
 ### 1. Understanding the Company
 
-**Prompt:**
+Before starting the technical assignment, I would like to understand Teramount and its technology.
 
-Are you familiar with Teramount? Please briefly explain the company's business, its core technology, and the products or solutions it develops. I would like to understand the context of the company before starting its technical assignment.
+Please provide an overview of the company, including its core business, underlying technology, main products, and the problems its solutions are designed to address.
+
+Focus on the technical aspects that may be relevant when approaching an engineering assignment for this company.
 
 ### 2. Understanding the Assignment
 
-**Prompt:**
+Please review the provided Teramount Home Assignment document carefully and explain the problem I am expected to solve.
 
-Please review the provided Teramount Home Assignment document carefully and explain its objectives in detail.
+I would like you to break down the assignment into the following areas:
 
-I want to understand:
-- What the assignment expects me to implement.
-- What input data is provided.
-- What measurements and results must be extracted.
-- What challenges the assignment is designed to evaluate.
-- What the expected deliverables are.
+1. **Objective:** What is the main problem the assignment aims to address?
+2. **Input Data:** What data is provided, and what are its characteristics?
+3. **Expected Processing:** What operations, algorithms, or measurements are required?
+4. **Expected Results:** What outputs and numerical results must be produced?
+5. **Technical Challenges:** What are the main engineering and computational challenges?
+6. **Deliverables:** What exactly must be submitted?
 
-Start by explaining the problem in accessible language before suggesting an implementation approach. Do not make assumptions about requirements that are not stated in the assignment.
+Start with a clear explanation of the problem and its requirements before discussing possible implementation approaches.
+
+Use the assignment document as the source of truth. Do not introduce assumptions or requirements that are not explicitly stated.
 
 ### 3. Preparing the Development Environment
 
-**Prompt:**
+Inspect the existing project environment and prepare it for development.
 
-Before proceeding with the implementation, please inspect the project environment and install the dependencies required for the assignment.
+Identify the Python version and available dependencies, then determine which additional packages are necessary to implement the assignment.
 
-Use an appropriate Python environment, select suitable scientific-computing and image-processing libraries, and verify that the installation works. Please avoid introducing unnecessary dependencies.
+Install the required dependencies using an appropriate Python environment and verify that the setup works correctly.
+
+Keep the dependency list minimal and avoid introducing packages that are not justified by the technical requirements.
 
 ### 4. Designing the Solution
 
-**Prompt:**
+Develop a comprehensive technical design for solving the assignment.
 
-Please develop a comprehensive technical design for solving this assignment.
+The solution should follow professional software engineering principles, with particular attention to measurement accuracy, robustness, maintainability, and reproducibility.
 
-The solution should demonstrate professional software engineering practices and prioritize measurement accuracy, robustness, maintainability, and reproducibility.
+Before proposing the architecture, investigate the problem systematically:
 
-Before proposing the architecture:
-1. Inspect the assignment and all available input data.
-2. Explore the structure and characteristics of the scans.
-3. Identify the main technical challenges and potential failure cases.
-4. Evaluate suitable algorithms for segmentation, geometric measurements, surface fitting, and fault detection.
+1. Examine the assignment requirements and available input data.
+2. Analyze the structure, dimensions, and characteristics of the provided scans.
+3. Identify the main computational challenges and potential sources of measurement error.
+4. Evaluate suitable approaches for image preprocessing, segmentation, geometric measurements, surface fitting, and fault detection.
+5. Consider potential edge cases and variations that may appear in unseen datasets.
 
-Then propose a modular architecture, explain the reasoning behind the major algorithmic choices, define the expected outputs, and establish a testing and validation strategy.
+Based on this investigation, propose a modular architecture that clearly separates responsibilities.
 
-The implementation will be evaluated on the provided dataset and an additional real-world dataset. Therefore, avoid hard-coded coordinates, file-specific assumptions, and solutions that only work on the current samples.
+For each major component, explain:
+
+- Its purpose and responsibilities.
+- The proposed algorithm or processing approach.
+- Why that approach is appropriate.
+- Its expected inputs and outputs.
+- Potential limitations and failure scenarios.
+
+Also define the testing strategy, validation methodology, and expected output structure.
+
+An important requirement is that the implementation will be evaluated using both the supplied dataset and an additional real-world dataset. Therefore, the design must generalize beyond the observed samples. Avoid hard-coded coordinates, dataset-specific assumptions, and approaches that depend on the exact characteristics of the provided scans.
 
 ### 5. Clarifying the Engineering Context
 
-**Prompt:**
+One important consideration regarding this assignment is that I am applying for a Software Engineer position, rather than a specialized research or data-science role.
 
-I am applying for a Software Engineer position, rather than a dedicated research or data-science position.
+Please take this into account when refining the technical design.
 
-Please take this into account when designing the solution. I want the implementation to demonstrate strong engineering practices, not simply produce accurate numerical results.
+The solution should demonstrate that I can translate a technical problem into a reliable and maintainable software system, not simply implement algorithms that produce numerical results.
 
-Prioritize:
-- Clean and modular architecture.
-- Readable, maintainable Python code.
-- Appropriate abstractions and separation of responsibilities.
-- Automated testing and error handling.
+In particular, prioritize:
+
+- Clear separation of responsibilities and modular architecture.
+- Readable, maintainable, and well-structured Python code.
+- Appropriate abstractions without unnecessary complexity.
+- Automated testing, validation, and error handling.
 - Reproducible execution and clear documentation.
+- Explicit handling of assumptions and failure cases.
 
-The mathematical methods should still be rigorous, but their implementation and justification should be understandable and defensible in a software engineering interview.
+The mathematical methods must remain technically rigorous, but the implementation should be understandable, defensible, and appropriate for discussion in a Software Engineering technical interview.
+
+Avoid over-engineering the solution or introducing abstractions that do not provide practical value.
 
 ### 6. Reviewing the Assignment Before Finalizing the Design
 
-**Prompt:**
+Before finalizing the technical design, perform another review against the original assignment document.
 
-Before finalizing the design, please return to the original assignment document and verify that the proposed solution addresses every requirement.
+I want to ensure that the proposed architecture addresses all explicit requirements and does not overlook important constraints.
 
-The implementation will be tested against both the supplied dataset and an additional real dataset. This means the design must generalize beyond the observed scans.
+Please evaluate the design with particular attention to the fact that the implementation will be tested on both the supplied dataset and an additional real-world dataset.
 
-Please identify:
-- Requirements that are not yet covered.
-- Assumptions that need validation.
-- Algorithms that may fail under different scan conditions.
-- Potential edge cases.
-- Any unnecessary complexity that could be removed without compromising the solution.
+Review the following:
 
-Do not finalize the design until you have checked it against the actual assignment requirements.
+1. **Requirement coverage:** Is every requested functionality addressed?
+2. **Generalization:** Will the proposed algorithms work on data with different characteristics?
+3. **Assumptions:** Which assumptions have been made, and have they been validated?
+4. **Robustness:** How might the algorithms behave under noisy, incomplete, or unexpected input?
+5. **Edge cases:** What scenarios could cause incorrect measurements or failures?
+6. **Complexity:** Are there unnecessary components or algorithms that could be simplified?
+
+Identify any gaps, weaknesses, or inconsistencies and recommend specific improvements.
+
+Do not finalize the design until it has been checked against the actual assignment requirements.
 
 ### 7. Defining the Scope and Constraints
 
-**Prompt:**
-
-I expect to have a few days to complete the assignment. I may also be asked to explain and justify the implementation during a technical interview.
+I expect to have a few days to complete this assignment, and I may need to explain the implementation and its technical decisions during a subsequent interview.
 
 I am permitted to use AI tools and other development resources.
 
-Please optimize the implementation strategy for this situation. The final result should be technically strong, but I also need to understand the important decisions well enough to explain them independently.
+Please take these constraints into account when defining the implementation strategy.
 
-Prioritize the essential requirements first and distinguish between must-have functionality and optional improvements.
+The objective is to deliver a technically strong solution while keeping the development process manageable and ensuring that I understand the important engineering and algorithmic decisions.
 
-### 8. Finalizing the Design
+Please distinguish between:
 
-**Prompt:**
+- Essential functionality required to satisfy the assignment.
+- Improvements that significantly increase accuracy or reliability.
+- Optional enhancements that are not necessary for the core solution.
+
+Prioritize implementation tasks based on their importance, technical risk, and dependency on other components.
+
+Avoid spending development time on unnecessary complexity that does not meaningfully improve the final result.
+
+### 8. Reviewing the Technical Design
+
+I used ChatGPT to obtain an independent review of the technical design. It was given the design document only and did not have access to the original assignment.
+
+I have included its recommendations below.
+
+Please evaluate these recommendations critically in the context of our actual assignment and implementation design.
+
+For each recommendation:
+
+1. Determine whether it is technically valid.
+2. Check whether it is consistent with the assignment requirements.
+3. Evaluate whether implementing it would improve the solution.
+4. Identify any potential disadvantages or unnecessary complexity.
+5. Decide whether it should be accepted, modified, or rejected.
+
+Do not accept recommendations automatically. Explain the reasoning behind each decision and update the design only where justified.
+
+### 9. Finalizing the Design
 
 Please proceed with the agreed design revisions.
 
-Update the design documentation to incorporate the accepted recommendations, resolve the identified inconsistencies, and ensure that the implementation plan is consistent with the final architecture.
+Update the technical design document to incorporate the recommendations that were accepted during the review.
 
-Before implementation, verify that the design, testing strategy, and deliverables are aligned.
+Ensure that:
 
-### 9. Starting the Implementation
+- The architecture reflects the final agreed approach.
+- Identified inconsistencies are resolved.
+- Rejected approaches are not included as active implementation requirements.
+- The testing and validation strategy covers the important failure cases.
+- The expected outputs match the assignment requirements.
+- The implementation plan is consistent with the final design.
 
-**Prompt:**
+Before proceeding to implementation, perform a final consistency check across the design document, implementation plan, testing strategy, and deliverables.
 
-The design is approved. Please proceed with the native implementation approach and build the complete solution in the current project.
+### 10. Starting the Implementation
 
-Follow the agreed implementation plan and work incrementally.
+The technical design has been reviewed and approved. Proceed with implementing the solution using the agreed native implementation approach.
+
+Follow the implementation plan and work incrementally, completing one task at a time.
 
 For each task:
-1. Implement the functionality.
-2. Add or update the relevant automated tests.
+
+1. Implement the functionality according to the agreed architecture.
+2. Write or update the relevant automated tests.
 3. Run the tests and investigate any failures.
-4. Review the implementation before moving to the next task.
+4. Verify that the implementation behaves correctly on the relevant input data.
+5. Review the implementation for correctness, readability, and maintainability before moving to the next task.
 
-Preserve the modular architecture and avoid shortcuts that compromise correctness or maintainability.
+Follow a test-first development approach wherever practical. Avoid shortcuts, unnecessary dependencies, and changes that compromise the architecture or measurement accuracy.
 
-Please also provide an estimate of the implementation time and identify the major remaining milestones.
+Keep the implementation plan updated as work progresses, documenting any deviations and the reasons behind them.
 
-### 10. Requesting an Implementation Progress Update
+Also provide an estimated development timeline, including the major milestones and remaining tasks.
 
-**Prompt:**
+### 11. Requesting an Implementation Progress Update
 
-Please provide an updated estimate of the remaining implementation time.
+Please provide a progress update on the implementation.
 
-Summarize the completed tasks, the work currently in progress, the outstanding tasks, and any issues that could affect the delivery timeline.
+Include:
 
-### 11. Requesting a Review Progress Update
+- Tasks completed successfully.
+- Tasks currently in progress.
+- Remaining tasks from the implementation plan.
+- Outstanding technical issues or blockers.
+- Any deviations from the original plan and their justification.
+- An updated estimate of the remaining development time.
 
-**Prompt:**
+Base the update on the actual project state rather than the original estimated timeline.
+
+### 12. Requesting a Code Review Progress Update
 
 Please provide an update on the independent code review.
 
-How many issues have been identified, how many have been resolved, and what remains to be reviewed? Also, estimate how much time is needed to complete the review.
+Summarize the current review status, including:
 
-### 12. Improving the AI Usage Documentation
+- The total number of issues identified.
+- The number of issues resolved.
+- The number of issues still outstanding.
+- The severity and general nature of the remaining findings.
+- Any components that have not yet been reviewed.
+- The estimated time required to complete the review.
 
-**Prompt:**
+Distinguish between confirmed issues, potential improvements, and observations that do not require changes.
 
-I need to document my use of AI tools as part of the assignment submission.
-
-Please prepare a professional and transparent AI usage section for `AI_USAGE.md`.
-
-The documentation should describe how Claude Code contributed to the development process, including data exploration, technical design, implementation, testing, debugging, and documentation.
-
-Please present the prompts used during the interactions in a professional, well-structured format. Do not invent technical decisions or claim that suggestions were implemented unless they were actually accepted and used.
-
-### 13. Preparing the AI Usage Disclosure
-
-**Prompt:**
+### 13. Preparing the AI Usage Documentation
 
 I need to prepare an AI usage disclosure as part of the assignment submission.
 
@@ -232,127 +335,28 @@ The document should cover the actual contributions of Claude Code, including:
 
 Also document the use of ChatGPT for brainstorming and independently reviewing the technical design.
 
-Include the prompts used during the development process in their original chronological order. Improve spelling, grammar, and readability where appropriate, but do not introduce requirements, technical decisions, or claims that were not part of the actual interactions.
+Include the prompts used during the development process in a professional, well-structured format.
+
+Do not invent technical decisions or claim that suggestions were implemented unless they were actually accepted and used.
 
 Clearly distinguish between suggestions that were accepted, rejected, or modified.
 
-The final document should accurately represent my use of AI tools while maintaining a professional and transparent account of the development process.
-
-### 14. Independent Final Review
-
-**Prompt:**
-
-**Assignment Review — Senior Software Engineer & Technical Evaluator**
-
-You are acting as a **Senior Software Engineer, Code Reviewer, and Technical Assignment Evaluator**.
-
-Your task is to thoroughly review my assignment as if you were evaluating it for submission to a university, technical interviewer, or professional engineering team.
-
-Your goal is to determine whether the assignment is correct, complete, well-implemented, properly tested, cleanly written, and ready for submission.
-
-**Critical rules:**
-
-1. **Do not modify anything.** This is a review-only task: inspect, analyze, test, and report.
-2. Do not assume the assignment is correct just because it runs.
-3. Be honest and critical.
-4. Do not invent problems; support every finding with evidence.
-5. Do not claim that tests passed unless you actually executed them.
-
-**Review phases:** (1) understand the assignment; (2) review the entire implementation; (3) review and execute the tests; (4) review test coverage and quality; (5) review the documentation; (6) check every assignment requirement; (7) give a final evaluation; (8) write a complete review report.
+The final document should accurately represent the AI-assisted development process and provide a clear account of the tools, activities, and engineering decisions involved.
 
 ---
 
-### Original Prompt Record
+## 5. Transparency Statement
 
-My prompts as I originally typed them, unchanged.
+AI tools were used throughout the development process to support assignment analysis, technical design, data exploration, implementation, testing, debugging, and documentation.
 
-**1.** 15 Nov, 13:33 UTC
+Claude Code was the primary AI-assisted development tool, while ChatGPT was used for brainstorming and an independent review of the technical design.
 
-```text
-hi , do you know teramount ?
-```
+Technical recommendations were evaluated against the assignment requirements and actual data rather than accepted automatically. The final implementation and its results were validated through automated tests, execution on the available datasets, inspection of diagnostic outputs, and an independent code review.
 
-**2.** 15 Nov, 13:37 UTC
+## 6. Original Prompts
 
-```text
-yes read the assismint and tell me what is this assigmint please
-```
+The prompts as I typed them, in the same order.
 
-**3.** 15 Nov, 13:44 UTC
-
-```text
-for now install the required stuff
-```
-
-**4.** 15 Nov, 13:49 UTC
-
-```text
-yes do the design , this i want this to be profiistional and you do you maximum to give the best resutls please
-```
-
-**5.** 15 Nov, 13:51 UTC
-
-```text
-idk , iam applying for a software enginner position
-```
-
-**6.** 15 Nov, 13:51 UTC
-
-```text
-yes but read the doc first to understand what they are asking for , the code will be tested on this data set and real data set
-```
-
-**7.** 15 Nov, 14:13 UTC
-
-```text
-a few days, maybe i need to explain it idk why ? but i can use ai to solve it and use what ever i want
-```
-
-**8.** 15 Nov, 14:27 UTC
-
-```text
-i used chat gpt to review the design , he wrote me this iwhile brainstorming , 
-
-[pasted: ChatGPT's review of the design, summarised in the table above]
-
- , what do you think about what he sees ? notice that chatgpt dies not have the assigmn he has only the design
-```
-
-**9.** 15 Nov, 14:32 UTC
-
-```text
-yes do it
-```
-
-**10.** 15 Nov, 15:40 UTC
-
-```text
-yes go with native, start building ,how much will it take ??
-```
-
-**11.** 15 Nov, 16:22 UTC
-
-```text
-how much you will take ??
-```
-
-**12.** 15 Nov, 17:06 UTC
-
-```text
-how much time left until the review finishes?
-```
-
-**13.** 15 Nov, 17:08 UTC
-
-```text
-use the promts and inhence them to look profisinal , i used chat gpt to brain storm how to solve the problem
-```
-
-**14.** 15 Nov, 17:12 UTC
-
-```text
-https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44, but i as i told you write the promts in more profinsinla way
-```
 **1.** 15 Nov, 13:33 UTC
 
 ```text
