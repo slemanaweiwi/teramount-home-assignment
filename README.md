@@ -189,7 +189,7 @@ Each figure (`results/figures/<name>/<scan>.png`) has six panels:
 py -m pip install -r requirements-dev.txt
 py -m pytest                                   # everything (20-30 min, includes the real data)
 py -m pytest -m "not slow and not realdata"    # quick run (5-10 min)
-py -m pytest --cov=teramount_analysis          # with line coverage (99.7 %)
+py -m pytest --cov=teramount_analysis          # with line coverage (99.8 %)
 py -m ruff check .                             # lint
 ```
 
