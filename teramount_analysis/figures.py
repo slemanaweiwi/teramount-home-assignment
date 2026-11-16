@@ -143,8 +143,16 @@ def _xpander_panels(ax_xp, ax_res, ax_prof, fig: Figure, zc: np.ndarray, xp, p: 
         img = ax_res.imshow(xp.residual_map[r0:r1, c0:c1] * 1000.0, cmap="RdBu_r",
                             vmin=-lim_nm, vmax=lim_nm, extent=extent)
         fig.colorbar(img, ax=ax_res, label="fit residual [nm]", shrink=0.85)
+    dropped_note = ""
+    if xp.outlier_map is not None and xp.outlier_map[r0:r1, c0:c1].any():
+        overlay = np.zeros((r1 - r0, c1 - c0, 4))
+        overlay[xp.outlier_map[r0:r1, c0:c1]] = (0.0, 0.0, 0.0, 1.0)  # dropped pixels: black
+        ax_res.imshow(overlay, extent=extent)
+        dropped_note = (f"\nblack: {xp.outlier_pct:.2f} % dropped "
+                        "(spikes, dust, local features)")
     ax_res.set_title(f"fit residual: RMS {xp.rms_um * 1000:.1f} nm, "
-                     f"nRMS {xp.nrms_pct:.2f} %, R² {xp.r_squared:.4f}", fontsize=10)
+                     f"nRMS {xp.nrms_pct:.2f} %, R² {xp.r_squared:.4f}{dropped_note}",
+                     fontsize=10)
 
     n = int(radius)
     us = np.arange(max(u0 - n, 0), min(u0 + n + 1, zc.shape[1]))

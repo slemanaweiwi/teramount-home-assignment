@@ -26,13 +26,15 @@ METRIC_COLUMNS: tuple[str, ...] = (
     "tilt_x_deg", "tilt_y_deg", "tilt_total_deg", "tilt_azimuth_deg", "base_rms_um",
     "rotation_deg", "rotation_se_deg", "rotation_lines",
     "pivot_height_diff_um", "pivot_height_diff_with_crosses_um", "plane1_rms_um",
-    "plane2_rms_um", "plane_parallelism_deg",
+    "plane2_rms_um", "plane_parallelism_deg", "plane1_local_feature_um2",
+    "plane2_local_feature_um2",
     *(f"cross{n}_{f}" for n in (1, 2) for f in _CROSS_FIELDS),
     "xpander_apex_x_px", "xpander_apex_y_px", "xpander_apex_u_px", "xpander_apex_v_px",
     "xpander_apex_z_um", "xpander_apex_axis_offset_um", "xpander_rx_um", "xpander_ry_um",
     "xpander_rx_ci95_um",
     "xpander_ry_ci95_um", "xpander_r1_um", "xpander_r2_um", "xpander_principal_angle_deg",
-    "xpander_rms_um", "xpander_outlier_pct", "xpander_nrms_pct", "xpander_r_squared",
+    "xpander_rms_um", "xpander_outlier_pct", "xpander_local_feature_um2", "xpander_nrms_pct",
+    "xpander_r_squared",
     "xpander_sag_um",
     "xpander_aperture_radius_um", "xpander_r_sphere_um", "xpander_rx_profile_um",
     "xpander_ry_profile_um", "xpander_stability_pct",
@@ -110,7 +112,9 @@ class ScanResult:
             m.update(pivot_height_diff_um=pv.height_diff_um,
                      pivot_height_diff_with_crosses_um=pv.height_diff_with_crosses_um,
                      plane1_rms_um=pv.plane1_rms_um, plane2_rms_um=pv.plane2_rms_um,
-                     plane_parallelism_deg=pv.parallelism_deg)
+                     plane_parallelism_deg=pv.parallelism_deg,
+                     plane1_local_feature_um2=pv.plane1_feature_um2,
+                     plane2_local_feature_um2=pv.plane2_feature_um2)
         for n, c in ((1, self.cross1), (2, self.cross2)):
             if c is not None and c.found:
                 values = (c.x_px, c.y_px, c.x_px * p, c.y_px * p, c.u_px, c.v_px, c.depth_um,
@@ -126,7 +130,7 @@ class ScanResult:
                 xpander_ry_um=x.ry_um, xpander_rx_ci95_um=x.rx_ci95_um,
                 xpander_ry_ci95_um=x.ry_ci95_um, xpander_r1_um=x.r1_um, xpander_r2_um=x.r2_um,
                 xpander_principal_angle_deg=x.principal_angle_deg, xpander_rms_um=x.rms_um,
-                xpander_outlier_pct=x.outlier_pct,
+                xpander_outlier_pct=x.outlier_pct, xpander_local_feature_um2=x.local_feature_um2,
                 xpander_nrms_pct=x.nrms_pct, xpander_r_squared=x.r_squared,
                 xpander_sag_um=x.sag_um, xpander_aperture_radius_um=x.aperture_radius_um,
                 xpander_r_sphere_um=x.r_sphere_um, xpander_rx_profile_um=x.rx_profile_um,

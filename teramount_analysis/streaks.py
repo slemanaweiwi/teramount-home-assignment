@@ -37,25 +37,34 @@ class StreakResult:
     """Streaks found in a scan and whether they were removed."""
 
     level_um: float  # robust spread of the line offsets, larger direction [µm]
+    noise_floor_um: float  # spread the estimate shows from pixel noise alone [µm]
     axis: str  # direction of the larger streaks: "rows" or "columns"
     corrected: bool  # True when the offsets were subtracted
 
 
-def _line_offsets(z: np.ndarray, flat: np.ndarray, sigma: float) -> np.ndarray:
-    """Streak offset of every row of ``z`` [same unit as z]."""
+def _line_offsets(z: np.ndarray, flat: np.ndarray, sigma: float) -> tuple[np.ndarray, float]:
+    """Streak offset of every row of ``z``, and the spread pixel noise alone gives it.
+
+    Each line's step is a median of ``n`` noisy differences, so it carries an
+    error of about 1.25 x their spread / sqrt(n); the typical value over the
+    lines is the floor below which a "streak" is just noise.
+    """
     d = z[1:] - z[:-1]
     ok = flat[1:] & flat[:-1] & np.isfinite(d)
     counts = ok.sum(axis=1)
     with warnings.catch_warnings():  # lines with no flat pixel: handled just below
         warnings.simplefilter("ignore", RuntimeWarning)
-        steps = np.nanmedian(np.where(ok, d, np.nan), axis=1) if d.size else np.zeros(0)
+        diffs = np.where(ok, d, np.nan)
+        steps = np.nanmedian(diffs, axis=1) if d.size else np.zeros(0)
+        spread = _MAD_TO_SIGMA * np.nanmedian(np.abs(diffs - steps[:, None]), axis=1)
     known = counts >= _MIN_FLAT_PER_LINE
     if not known.any():
-        return np.zeros(z.shape[0])
+        return np.zeros(z.shape[0]), 0.0
+    floor = float(np.median(1.2533 * spread[known] / np.sqrt(counts[known])))
     steps = np.where(known, steps, np.median(steps[known]))  # unknown: the typical step
     heights = np.concatenate([[0.0], np.cumsum(steps)])
     trend = ndimage.gaussian_filter1d(heights, sigma, mode="nearest")
-    return heights - trend
+    return heights - trend, floor
 
 
 def _level(offsets: np.ndarray) -> float:
@@ -78,16 +87,22 @@ def remove_streaks(z: np.ndarray, config: Config, flat: np.ndarray | None = None
         flat = flat_mask(segmentation_surface(z, config), config)
     flat = flat & np.isfinite(z)
     sigma = config.px(config.streak_trend_um)
-    rows = _line_offsets(z, flat, sigma)
-    cols = _line_offsets(z.T, flat.T, sigma)
+    rows, row_floor = _line_offsets(z, flat, sigma)
+    cols, col_floor = _line_offsets(z.T, flat.T, sigma)
     row_level, col_level = _level(rows), _level(cols)
     axis = "rows" if row_level >= col_level else "columns"
     level = max(row_level, col_level)
-    if not config.correct_streaks or level <= config.streak_min_um:
-        return z, StreakResult(level, axis, False)
+    floor = max(row_floor, col_floor)
+
+    def clear(lvl: float, flr: float) -> bool:  # well above the method's own noise
+        return lvl > max(config.streak_min_um, config.streak_noise_factor * flr)
+
+    if not config.correct_streaks or not (clear(row_level, row_floor)
+                                          or clear(col_level, col_floor)):
+        return z, StreakResult(level, floor, axis, False)
     out = z.copy()
-    if row_level > config.streak_min_um:
+    if clear(row_level, row_floor):
         out = out - rows[:, None]
-    if col_level > config.streak_min_um:
+    if clear(col_level, col_floor):
         out = out - cols[None, :]
-    return out, StreakResult(level, axis, True)
+    return out, StreakResult(level, floor, axis, True)

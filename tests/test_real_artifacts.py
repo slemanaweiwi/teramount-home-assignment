@@ -45,14 +45,25 @@ def _dust(z: np.ndarray, apex_xy: tuple[float, float]) -> np.ndarray:
     return add_particle(z, (ax, ay + 50 / P), 3.0, 3.0)
 
 
+def _bad_lines(z: np.ndarray, apex_xy: tuple[float, float]) -> np.ndarray:
+    """Two scan lines recorded 0.5 um too high: across the dome and 40 um below it."""
+    out = z.copy()
+    for row in (int(apex_xy[1]) + 30, int(apex_xy[1]) + 160):
+        out[row] += 0.5
+    return out
+
+
+# artefact -> (alteration, geometric flags it must add, warning it must add)
 ARTEFACTS = {
-    "spikes": lambda z, apex: add_spikes(z, 0.0005),
-    "dust": _dust,
-    "streaks": lambda z, apex: add_streaks(z, 0.03),
-    "edge_ringing": lambda z, apex: add_edge_overshoot(z, 0.1),
-    "dropouts": lambda z, apex: _dropouts(z),
-    "all_together": lambda z, apex: _dropouts(
-        add_streaks(add_spikes(_dust(z, apex), 0.0005), 0.02)),
+    "spikes": (lambda z, apex: add_spikes(z, 0.0005), set(), None),
+    "dense_spikes": (lambda z, apex: add_spikes(z, 0.005), set(), None),
+    "dust": (_dust, {"xpander_local_feature"}, None),
+    "streaks": (lambda z, apex: add_streaks(z, 0.03), set(), "scan_line_streaks_removed"),
+    "bad_lines": (_bad_lines, set(), "scan_line_glitch"),
+    "edge_ringing": (lambda z, apex: add_edge_overshoot(z, 0.1), set(), None),
+    "dropouts": (lambda z, apex: _dropouts(z), set(), None),
+    "all_together": (lambda z, apex: _dropouts(
+        add_streaks(add_spikes(_dust(z, apex), 0.0005), 0.02)), {"xpander_local_feature"}, None),
 }
 
 
@@ -71,16 +82,21 @@ def baselines():
 
 @pytest.mark.parametrize("artefact", list(ARTEFACTS))
 @pytest.mark.parametrize("file_index", FILES)
-def test_artefact_leaves_results_and_verdict_unchanged(baselines, file_index, artefact):
+def test_artefact_is_handled_on_real_scans(baselines, file_index, artefact):
     z, base, b = baselines[file_index]
+    alter, new_flags, warning = ARTEFACTS[artefact]
     apex = (b["xpander_apex_x_px"], b["xpander_apex_y_px"])
-    r = analyse_scan(ARTEFACTS[artefact](z, apex), Config(), f"{file_index}+{artefact}")
+    r = analyse_scan(alter(z, apex), Config(), f"{file_index}+{artefact}")
     m = r.metrics(Config())
     assert r.status == "ok", r.error
-    assert r.faults.faulty == base.faults.faulty, (r.faults, base.faults)
+    assert set(r.faults.geometric) == set(base.faults.geometric) | new_flags, r.faults
+    # On a noisy surface (file 6: +-1 um Pivot, +-0.4 um dome) a 0.5 um bad line is
+    # inside the noise and is not singled out; the measurements must still hold.
+    if warning and not (artefact == "bad_lines" and base.faults.faulty):
+        assert warning in r.warnings, r.warnings
     assert m["pivot_height_diff_um"] == pytest.approx(b["pivot_height_diff_um"], abs=0.03)
     # Radii: 0.3 %, or twice the scan's own 95 % interval on a noisy dome (file 6:
-    # +-3.2 um); along streaks up to 0.6 % (their slow part is indistinguishable
+    # +-3.3 um); along streaks up to 0.6 % (their slow part is indistinguishable
     # from the surface, see test_pipeline).
     ry_rel = 0.006 if artefact in ("streaks", "all_together") else 0.003
     for axis, rel in (("x", 0.003), ("y", ry_rel)):
@@ -90,3 +106,17 @@ def test_artefact_leaves_results_and_verdict_unchanged(baselines, file_index, ar
         xy = (m[f"cross{n}_x_px"], m[f"cross{n}_y_px"])
         assert xy == pytest.approx((b[f"cross{n}_x_px"], b[f"cross{n}_y_px"]), abs=0.3), n
     assert m["rotation_deg"] == pytest.approx(b["rotation_deg"], abs=0.03)
+
+
+@pytest.mark.parametrize("file_index", FILES)
+def test_dust_wider_than_10um_is_reported_never_silently_wrong(baselines, file_index):
+    z, _, b = baselines[file_index]
+    ax, ay = b["xpander_apex_x_px"], b["xpander_apex_y_px"]
+    r = analyse_scan(add_particle(z, (ax + 30 / P, ay), 7.5, 2.0), Config(), "big dust")
+    x = r.xpander
+    if x.found:  # measured without the particle, and the particle is reported
+        assert "xpander_local_feature" in r.faults.geometric
+        tol = max(0.02 * b["xpander_rx_um"], 2 * b["xpander_rx_ci95_um"])  # smaller fit area
+        assert x.rx_um == pytest.approx(b["xpander_rx_um"], abs=tol)
+    else:  # or not measured, with the reason
+        assert x.reason and "xpander_not_found" in r.faults.geometric

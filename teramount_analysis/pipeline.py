@@ -123,6 +123,10 @@ def _run(z: np.ndarray, config: Config, result: ScanResult) -> None:
         problems.append(f"xpander not found: {result.xpander.reason}")
     elif result.xpander.outlier_pct > config.xpander_max_outlier_pct:
         result.warnings = (*result.warnings, "xpander_outliers_removed")
+    glitches = result.pivot.glitch_lines + (result.xpander.glitch_lines
+                                            if result.xpander.found else 0.0)
+    if glitches > 0:  # outliers shaped like a scan line recorded at the wrong height
+        result.warnings = (*result.warnings, "scan_line_glitch")
     result.status = "partial" if problems else "ok"
     result.error = "; ".join(problems)
 

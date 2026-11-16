@@ -10,7 +10,7 @@ nearest the channel axis wins.
 The centre is the depth-weighted centroid of the original (non-interpolated)
 pixels, so it is accurate to a fraction of a pixel even though the cross
 outline is pixelated. A pixel's weight is capped just above the cross depth,
-so a deep spike inside the cross cannot pull the centre.
+so a deep spike inside the cross barely pulls the centre.
 """
 
 from __future__ import annotations
@@ -143,7 +143,7 @@ def _measure(z_leveled: np.ndarray, frame: Frame, plane: PlaneFit, mask: np.ndar
     spread = 1.4826 * float(np.median(np.abs(floor - depth))) if floor.size else 0.0
     cap = depth + max(config.cross_depth_tol_um, 5.0 * spread)  # above any real floor pixel
     rr, cc, u, v, res = raw_residual(ndimage.binary_dilation(mask))
-    w = np.clip(sign * res, 0.0, cap)  # a deep spike counts no more than a floor pixel
+    w = np.clip(sign * res, 0.0, cap)  # a deep spike counts at most ~1.6x a floor pixel
     if w.sum() <= 0:
         return NOT_FOUND
     u_c = float(np.average(u, weights=w))

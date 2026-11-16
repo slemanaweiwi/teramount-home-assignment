@@ -55,6 +55,12 @@ def geometric_flags(result: ScanResult, config: Config) -> tuple[str, ...]:
             flags.append("plane2_noisy")
     if x is not None and x.found and x.rms_um > config.max_xpander_rms_um:
         flags.append("xpander_surface_noisy")
+    # A compact bump or pit (dust or a defect: height data cannot tell them apart).
+    if pv is not None:
+        flags += [f"plane{n}_local_feature" for n, area in
+                  ((1, pv.plane1_feature_um2), (2, pv.plane2_feature_um2)) if area > 0]
+    if x is not None and x.found and x.local_feature_um2 > 0:
+        flags.append("xpander_local_feature")
     for n, cross in ((1, result.cross1), (2, result.cross2)):
         off_axis = cross is not None and cross.axis_offset_um > config.max_cross_axis_offset_um
         if off_axis and cross.found:

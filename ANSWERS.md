@@ -306,7 +306,8 @@ That dome carries uniform noise of ±0.4 µm, about 25 times the clean RMS. Its
 twin in dataset 2 (file 6) is the same chip without the noise. The noisy
 measurement gives Rx/Ry = 833.0/827.0 µm, against 834.0/830.3 µm on the clean
 twin: Rx is 1.0 µm off, well inside its 95 % CI of ±3.3 µm (0.4 %), and Ry
-3.3 µm off, right at its CI. That is what a 95 % interval allows; see
+3.28 µm off, just outside its ±3.26 µm interval. One value in twenty is
+expected outside a 95 % interval, and both differences are below 0.4 %; see
 `docs/figures/radius_twins.png`.
 
 **Why it holds:**
@@ -651,6 +652,7 @@ does not handle, and why.
 | The base is a plane (tilt only) | Base residual about 12 nm after the RANSAC plane. | A bowed base is not modelled; a bow with a radius above 1 m would change R by less than 0.7 µm, and the Pivot step is measured locally. |
 | The dome is smooth and convex, close to a paraboloid over the fit area | Sphere and paraboloid differ by ≤ 1.5 nm over the aperture; the exact sphere fit agrees within 0.09 %. | A non-convex dome is reported "surface not convex". |
 | Neighbouring domes are separated by valleys or steps | Layout of the chip; all scans. | The fit area is limited and the reason is reported. |
+| The dome lies above the Pivot (in the corrected view), with a step up to plane 1 between them | Layout of the chip; all scans. | The dome is searched only down to 20 µm below the top of plane 1 (`xpander_rows_below_plane1_um`). |
 | Nominal spec 18.18 ± 0.30 µm and 826 ± 30 µm | Estimated from the clean provided files; the design is "similar". | `--nominal-step`, `--nominal-radius`. The geometric and statistical checks do not depend on them. |
 | Noise limits: plane RMS 150 nm, dome RMS 30 nm (after outliers are dropped) | Clean surfaces: 20–55 nm and 7–9 nm; the noisy ones: 370–590 nm and 150–230 nm. | Settings in `config.py`. |
 
@@ -659,10 +661,12 @@ does not handle, and why.
 | Artefact | What it did before | How it is handled | Proven by |
 |---|---|---|---|
 | Random noise | — | Least squares over more than 100,000 points; confidence intervals reported; a noisy surface is flagged by its absolute RMS. | Noisy files 6 (dataset 1), 3, 7, 13 (dataset 2); `test_noisy_dome_*`. |
-| Single-pixel spikes (dust glints, bad pixels) | Every clean dome was flagged "noisy". | The dome fit drops outliers and reports their share; the plane fits drop outliers (3σ); segmentation uses a median filter; in a cross centroid no pixel counts for more than a floor pixel. | `test_dust_spikes_*`, `test_deep_spikes_inside_a_cross_*` (6 spikes: 0.8 px → < 0.2 px), real scans with spikes. |
-| Dust particles up to 10 µm | A 3 µm particle on the dome, or between the Pivot and the dome, made the Xpander "not found". | The apex and the dome edge are found on a copy with particles removed (grey opening); the fit then drops the particle's pixels. | `test_dust_particle_*` (3 positions), real scans with dust. |
+| Single-pixel spikes (dust glints, bad pixels) | Every clean dome was flagged "noisy". | The dome fit drops outliers and reports their share; the plane fits drop outliers (3σ); segmentation uses a median filter; in a cross centroid a deep spike is capped just above the deepest real floor pixel (at most about 1.6 times a typical floor pixel). | `test_dust_spikes_*`, `test_deep_spikes_inside_a_cross_*` (6 spikes: 0.8 px → < 0.2 px), real scans with 0.05 % and 0.5 % spikes. |
+| Dust particles and local defects (bumps, pits) on the dome | A 3 µm particle on the dome, or between the Pivot and the dome, made the Xpander "not found"; a broad low bump biased R by 0.56 %. | The apex and the dome edge are found on a copy with particles up to 10 µm removed (grey opening). In the fit, a compact cluster of dropped pixels is a **local feature**: it is excluded together with a 3 µm ring (so its low shoulders cannot bias R) and **reported as the fault `xpander_local_feature`**, because height data cannot tell dust from a real defect. | `test_dust_particle_*` (3 positions), `test_broad_low_bump_*`, `test_pit_on_the_dome_*`, real scans with dust and with a 15 µm particle. |
+| Local defects on the Pivot planes | — | The same rule inside each plane: excluded with a ring, reported as `plane1_local_feature` / `plane2_local_feature`. A cluster touching the plane's edge is not counted, because the plane's own edge rounding where it meets a wall looks the same (on the 30 provided scans every such cluster was at an edge). | `test_shallow_bump_*`, `test_pit_on_plane_2_*`, `test_clusters_touching_the_region_edge_*`. |
 | Missing pixels (NaN), including dropouts on steep walls | — | Filled only to find things; excluded from every fit; the rotation never measures a filled pixel. | `test_nan_*`, `test_clustered_nan_*`, `test_wall_dropouts_*`, real scans with dropouts. |
-| Scan-line streaks (each line offset by its own height) | 50 nm streaks raised false "noisy dome" and "planes not parallel" faults. | Measured on every scan (`streak_level_um`; clean scans: under 1 nm) and removed when above 10 nm, with the warning `scan_line_streaks_removed`. | `test_streaks.py`, `test_scan_line_streaks_*`, real scans with streaks. |
+| Scan-line streaks (every line offset by its own height) | 50 nm streaks raised false "noisy dome" and "planes not parallel" faults. | Measured on every scan (`streak_level_um`; clean scans: under 1 nm) and removed when above 10 nm **and** four times the method's own noise floor (so strong white noise is not mistaken for streaks), with the warning `scan_line_streaks_removed`. | `test_streaks.py`, `test_scan_line_streaks_*`, real scans with streaks. |
+| A few bad scan lines | — | Not corrected (see below), but the robust dome and plane fits drop their pixels, and a thin, long cluster of dropped pixels across a plane or the dome gives the warning `scan_line_glitch`. | `test_bad_scan_line_*`, `test_a_long_thin_cluster_*`, real scans with bad lines. |
 | Ringing ("batwings") at steep edges | — | Plane fits exclude a 0.5 µm edge margin; the rotation reads each edge's plateaus away from the edge, and takes the median of 32–46 edges. | Real scans with 10 % edge ringing. |
 | Tilt and height offset | — | RANSAC base plane, subtracted. | Dataset 2; `test_tilt.py`. |
 
@@ -670,18 +674,44 @@ does not handle, and why.
 to three real scans: a standard chip, the other variant (file 12) and the
 noisy file 6. The step stays within 0.03 µm, the radii within 0.3 % (or
 twice the scan's own uncertainty on the noisy dome), the crosses within
-0.3 px, and the faulty / clean verdict does not change.
+0.3 px, and the faulty / clean verdict changes only by the flag the artefact
+must raise (dust on the dome: `xpander_local_feature`). The figure of each
+scan shows the dropped dome pixels in black on the residual map.
+
+On the 30 provided scans none of this fires: no streak is corrected (levels
+under 1 nm), almost no dome pixel is dropped (at most 0.0008 %), and no local
+feature or scan-line warning is reported. The new copy used to find the dome
+changes where the fit is centred by a fraction of a pixel; three domes moved
+by up to 0.06 % (noisy file 6 of dataset 1, its twin, and noisy file 13 of
+dataset 2), inside each radius's own uncertainty.
 
 ### Not handled, by choice
 
+- **Dust on a cross** shifts its centre by up to about 1 px. It cannot be
+  detected reliably: a clean real cross is itself asymmetric (180° symmetry
+  error up to 0.23 on the 60 provided crosses, against 0.16–0.24 for a cross
+  with dust), so any threshold would flag clean crosses. Deep spikes inside a
+  cross are handled (see above).
+- **Correcting a few bad scan lines.** The provided scans themselves have
+  full-width horizontal texture of up to 270 nm in fixed zones (the band at
+  the top, rows 10–52, and near row 630), which looks exactly like bad lines
+  to a line detector, so an automatic line correction would damage real data.
+  Instead their pixels are dropped by the robust fits and reported (above). A
+  bad line through a cross is not detected: a 1 µm line shifts the centre by
+  about 0.5 px. On a noisy surface a bad line smaller than the noise (0.5 µm on
+  the noisy file 6) is part of that noise and is not singled out.
+- **Steep dust on a Pivot plane is excluded but not flagged.** A particle
+  that breaks the flatness is left out of the plane by the segmentation, so it
+  cannot bias the step, but it is not reported: plane 1 carries the chip's own
+  raised pads, which are the same size as dust.
 - **Particles wider than 10 µm and debris taller than plane 2.** They are the
   size of the chip's own features, so they cannot be told apart from them
-  without the design layout. Inside the fit area their pixels are still
-  dropped as outliers (and counted); elsewhere they make an element "not
-  found" with a reason, never a wrong measurement in silence.
+  without the design layout. On the dome they are reported as a local feature
+  or make the dome "not found" with a reason (tested with a 15 µm particle);
+  elsewhere they make an element "not found" with a reason.
 - **Pits and scratches** are not removed from the copy used to find the dome,
   because removing pits would also fill the valleys that separate
-  neighbouring domes. Inside the fit area they are dropped as outliers.
+  neighbouring domes. Inside the fit area they are local features.
 - **The slow part of scan-line streaks** cannot be told apart from the real
   surface shape. With 50 nm streaks it shifts the radius along the streak
   direction by up to 0.5 %, corrected or not.

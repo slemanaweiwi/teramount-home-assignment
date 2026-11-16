@@ -145,7 +145,7 @@ def test_unstable_apex_is_reported_not_raised(monkeypatch):
         def vertex():
             return 100.0, 0.0  # µm; half the aperture is about 25 µm
 
-    monkeypatch.setattr(xpander_module, "_fit", lambda ap, config: (FarVertex(), ap))
+    monkeypatch.setattr(xpander_module, "_fit", lambda ap, config: (FarVertex(), ap, None))
     z, _ = make_scan()
     x = run_xpander(z, 0.0)
     assert not x.found and "unstable" in x.reason
@@ -207,3 +207,34 @@ def test_dust_particle_does_not_hide_or_shrink_the_dome(dx_um, dy_um):
     assert x.aperture_radius_um == pytest.approx(0.8 * 63, rel=0.1)
     assert x.rx_um == pytest.approx(820, rel=0.003) and x.ry_um == pytest.approx(840, rel=0.003)
     assert x.rms_um < 0.03
+
+
+def test_broad_low_bump_is_reported_and_does_not_bias_the_radius():
+    # 24 um wide, 0.15 um high: only its top exceeds the clip limit, so its
+    # shoulders used to stay in the fit and bias Ry by 0.56 %.
+    z, t = make_scan(rx_um=820, ry_um=840)
+    ax, ay = t.apex_xy_px
+    x = run_xpander(add_particle(z, (ax + 20 / 0.252, ay + 10 / 0.252), 12.0, 0.15), 0.0)
+    assert x.found and x.local_feature_um2 > 1.0
+    assert x.rx_um == pytest.approx(820, rel=0.003) and x.ry_um == pytest.approx(840, rel=0.003)
+
+
+def test_pit_on_the_dome_is_reported_not_hidden():
+    z, t = make_scan()
+    ax, ay = t.apex_xy_px
+    x = run_xpander(add_particle(z, (ax - 15 / 0.252, ay + 5 / 0.252), 4.0, -0.5), 0.0)
+    assert x.found and x.local_feature_um2 > 1.0
+
+
+def test_bad_scan_line_through_the_dome_is_a_line_not_a_feature():
+    z, t = make_scan(rx_um=820, ry_um=840)
+    z[int(t.apex_xy_px[1]) + 40] += 0.5  # one scan line recorded 0.5 um too high
+    x = run_xpander(z, 0.0)
+    assert x.found and x.local_feature_um2 == 0.0 and x.glitch_lines >= 1
+    assert x.rx_um == pytest.approx(820, rel=0.003) and x.ry_um == pytest.approx(840, rel=0.003)
+
+
+def test_spikes_are_not_local_features():
+    z, _ = make_scan()
+    x = run_xpander(add_spikes(z, 0.002), 0.0)
+    assert x.local_feature_um2 == 0.0 and x.glitch_lines == 0

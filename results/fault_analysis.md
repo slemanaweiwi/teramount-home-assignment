@@ -44,8 +44,8 @@ outliers on the same metrics).
 - The noise is **uniform between −0.4 and +0.4 µm**: std 0.231 µm, kurtosis
   −1.20. It is spatially white (figure: grainy residual map, no pattern).
 - **The radius survives the noise.** Rx/Ry = 833.0 / 827.0 µm against
-  834.0 / 830.3 µm on the clean twin: 1.0 and 3.3 µm apart, against a 95 % CI
-  of ±3.3 µm.
+  834.0 / 830.3 µm on the clean twin: 1.0 µm apart in Rx (inside the 95 % CI
+  of ±3.3 µm) and 3.28 µm in Ry (just outside its ±3.26 µm), below 0.4 % in both.
 
 **Verdict:** both elements carry strong surface noise (or measurement
 artefacts). On a Pivot whose planes are flat to about 50 nm, ±1 µm of noise

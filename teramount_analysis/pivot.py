@@ -27,6 +27,7 @@ from .config import Config
 from .errors import ElementNotFoundError
 from .fitting import PlaneFit, fit_plane, fit_plane_robust
 from .frame import Frame
+from .outliers import OutlierClasses, classify_outliers
 from .surface import flat_mask
 
 _EIGHT_CONNECTED = np.ones((3, 3), dtype=bool)
@@ -174,6 +175,9 @@ class PivotResult:
     plane1_rms_um: float  # plane-1 fit residual (flatness / noise) [µm]
     plane2_rms_um: float  # plane-2 fit residual [µm]
     parallelism_deg: float  # angle between the two plane normals [deg]
+    plane1_feature_um2: float = 0.0  # largest local bump or pit on plane 1 (dust/defect) [µm²]
+    plane2_feature_um2: float = 0.0  # same on plane 2 [µm²]
+    glitch_lines: float = 0.0  # scan-line-shaped outlier clusters on the planes
 
 
 def measure_pivot(z_leveled: np.ndarray, frame: Frame, regions: PivotRegions,
@@ -197,22 +201,38 @@ def measure_pivot(z_leveled: np.ndarray, frame: Frame, regions: PivotRegions,
     u_all, v_all = frame.canonical_coordinates()
     finite = np.isfinite(z_leveled)
 
-    def points(mask_canonical: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def points(mask_canonical: np.ndarray) -> tuple[np.ndarray, ...]:
         rr, cc = np.nonzero(frame.pull_back(mask_canonical) & finite)
-        return u_all[rr, cc] * p, v_all[rr, cc] * p, z_leveled[rr, cc]
+        return u_all[rr, cc] * p, v_all[rr, cc] * p, z_leveled[rr, cc], rr, cc
 
-    def fits(plane: np.ndarray, cross: np.ndarray | None) -> tuple[PlaneFit, PlaneFit]:
+    def robust_without_features(u, v, z, rr, cc) -> tuple[PlaneFit, OutlierClasses]:
+        """Robust plane fit; local features (dust, defects) and their rim excluded."""
+        fit = fit_plane_robust(u, v, z)
+        res = z - fit.evaluate(u, v)
+        med = float(np.median(res))
+        sigma = 1.4826 * float(np.median(np.abs(res - med)))
+        dropped = np.abs(res - med) > max(config.outlier_clip_sigma * sigma,
+                                          config.outlier_clip_min_um)
+        classes = classify_outliers(rr, cc, dropped, p, config.feature_min_um2,
+                                    config.feature_margin_um, ignore_edge=True)
+        if classes.exclude.any():
+            keep = ~classes.exclude
+            fit = fit_plane_robust(u[keep], v[keep], z[keep])
+        return fit, classes
+
+    def fits(plane: np.ndarray, cross: np.ndarray | None
+             ) -> tuple[PlaneFit, PlaneFit, OutlierClasses]:
         core = ndimage.binary_erosion(plane, iterations=margin)
         if not core.any():
             core = plane
         cross_zone = (ndimage.binary_dilation(cross, iterations=cross_margin)
                       if cross is not None else np.zeros_like(plane))
-        robust = fit_plane_robust(*points(core & ~cross_zone))
-        naive = fit_plane(*points(core | cross_zone))  # no clipping: the cross stays in
-        return robust, naive
+        robust, classes = robust_without_features(*points(core & ~cross_zone))
+        naive = fit_plane(*points(core | cross_zone)[:3])  # no clipping: the cross stays in
+        return robust, naive, classes
 
-    fit1, naive1 = fits(regions.plane1, cross1_mask)
-    fit2, naive2 = fits(regions.plane2, cross2_mask)
+    fit1, naive1, out1 = fits(regions.plane1, cross1_mask)
+    fit2, naive2, out2 = fits(regions.plane2, cross2_mask)
     uc, vc = (c * p for c in regions.plane2_centroid_uv)
     level1, level2 = float(fit1.evaluate(uc, vc)), float(fit2.evaluate(uc, vc))
     cos_angle = float(np.clip(fit1.normal() @ fit2.normal(), -1.0, 1.0))
@@ -224,6 +244,9 @@ def measure_pivot(z_leveled: np.ndarray, frame: Frame, regions: PivotRegions,
         plane1_rms_um=fit1.rms,
         plane2_rms_um=fit2.rms,
         parallelism_deg=math.degrees(math.acos(cos_angle)),
+        plane1_feature_um2=out1.feature_um2,
+        plane2_feature_um2=out2.feature_um2,
+        glitch_lines=float(out1.n_lines + out2.n_lines),
     )
 
 

@@ -73,7 +73,8 @@ def fake_xpander(rx: float = 826.0, ry: float = 824.0, nrms: float = 0.6,
         ry_ci95_um=0.1, r1_um=min(rx, ry), r2_um=max(rx, ry), principal_angle_deg=0.0,
         rms_um=nrms / 100 * 1.45, nrms_pct=nrms, r_squared=0.9996, sag_um=1.45,
         r_sphere_um=0.5 * (rx + ry), rx_profile_um=rx, ry_profile_um=ry, stability_pct=1.0,
-        outlier_pct=0.0, n_points=120_000)
+        outlier_pct=0.0, local_feature_um2=0.0, glitch_lines=0.0, n_points=120_000,
+        outlier_map=None)
 
 
 def fake_result(**overrides) -> ScanResult:

@@ -286,3 +286,15 @@ def test_a_failing_figure_does_not_lose_the_measurement(tmp_path, caplog):
 
     res = analyse_dataset([tmp_path / "0.npy"], Config(), on_scan=broken)
     assert res[0].status == "ok" and "callback failed" in caplog.text
+
+
+def test_dome_fit_with_too_few_pixels_left_is_refused():
+    from teramount_analysis.xpander import _Aperture, _fit
+
+    du, dv = (a.ravel() for a in np.meshgrid(np.linspace(-40, 40, 9), np.linspace(-40, 40, 9)))
+    z = 12.0 - (du * 0.252) ** 2 / 1640 - (dv * 0.252) ** 2 / 1680
+    z = z + np.random.default_rng(0).normal(0, 0.01, z.size)
+    ap = _Aperture(np.arange(du.size), np.zeros(du.size, int), du, dv, z)
+    strict = Config(outlier_clip_sigma=0.0, outlier_clip_min_um=1e-12)  # drops everything
+    with pytest.raises(FitError, match="too few"):
+        _fit(ap, strict)

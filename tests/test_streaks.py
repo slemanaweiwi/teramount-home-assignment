@@ -57,3 +57,34 @@ def test_nan_pixels_stay_nan():
     z = add_streaks(clean, 0.03)
     out, s = remove_streaks(z, Config())
     assert s.corrected and np.array_equal(np.isnan(out), np.isnan(z))
+
+
+@pytest.mark.parametrize("noise_um", [0.2, 0.3])
+def test_strong_white_noise_is_not_mistaken_for_streaks(noise_um):
+    # The level estimate itself grows with noise; it must be compared with that floor.
+    z, _ = make_scan(noise_um=noise_um)
+    out, s = remove_streaks(z, Config())
+    assert not s.corrected and s.noise_floor_um > 0.0 and np.array_equal(out, z)
+
+
+def test_streaks_well_above_noise_are_still_removed():
+    clean, _ = make_scan(noise_um=0.1)
+    out, s = remove_streaks(add_streaks(clean, 0.1), Config())
+    assert s.corrected and s.level_um > 4 * s.noise_floor_um
+
+
+def test_row_and_column_streaks_together_are_both_removed():
+    clean, _ = make_scan()
+    z = add_streaks(add_streaks(clean, 0.03).T.copy(), 0.03, seed=1).T
+    out, s = remove_streaks(z, Config())
+    assert s.corrected
+    assert _residual_streak_um(out, clean, axis=0) < 0.004
+    assert _residual_streak_um(out, clean, axis=1) < 0.004
+
+
+def test_lines_without_flat_pixels_take_the_typical_step():
+    clean, _ = make_scan()
+    rows = np.arange(clean.shape[0], dtype=float)[:, None]
+    steep = clean + np.where((rows >= 300) & (rows < 320), 3.0 * rows, 0.0)  # no flat pixel
+    out, s = remove_streaks(add_streaks(steep, 0.03), Config())
+    assert s.corrected and np.isfinite(out).all()
