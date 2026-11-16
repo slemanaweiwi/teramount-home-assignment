@@ -238,7 +238,7 @@ to the apex:
 | 3 | 827.2 ± 0.12 | 821.4 ± 0.12 | 8.9 | 0.61 | 0.9995 | 0.36 | 825.0 |
 | 4 | 828.0 ± 0.11 | 823.1 ± 0.11 | 8.3 | 0.57 | 0.9996 | 1.59 | 826.3 |
 | 5 | 831.2 ± 0.12 | 826.8 ± 0.12 | 8.7 | 0.60 | 0.9996 | 0.44 | 829.7 |
-| **6** | **833.4 ± 3.23** | **827.5 ± 3.19** | **231.4** | **15.96** | **0.7646** | 2.43 | 830.7 |
+| **6** | **833.0 ± 3.31** | **827.0 ± 3.26** | **231.4** | **16.22** | **0.7588** | 2.43 | 830.3 |
 | 7 | 831.4 ± 0.12 | 824.4 ± 0.12 | 8.4 | 0.58 | 0.9996 | 0.84 | 828.6 |
 | 8 | 829.7 ± 0.12 | 824.3 ± 0.12 | 8.7 | 0.60 | 0.9996 | 0.98 | 827.7 |
 | 9 | 827.5 ± 0.11 | 823.5 ± 0.11 | 8.0 | 0.55 | 0.9996 | 0.60 | 826.2 |
@@ -280,7 +280,7 @@ percentage of the size of the feature being measured.
 
 - Clean domes: nRMS **0.55–0.62 %** and R² **0.9995–0.9996**. The model
   describes the surface to about 8–9 nm.
-- File 6: nRMS **16.0 %** and R² **0.765**. This is a poor fit (see §1.7).
+- File 6: nRMS **16.2 %** and R² **0.759**. This is a poor fit (see §1.7).
 
 **Two uncertainty measures complete the picture of how good R is:**
 
@@ -304,8 +304,9 @@ proves it.**
 
 That dome carries uniform noise of ±0.4 µm, about 25 times the clean RMS. Its
 twin in dataset 2 (file 6) is the same chip without the noise. The noisy
-measurement gives Rx/Ry = 833.4/827.5 µm, against 833.8/830.5 µm on the clean
-twin. That's within its 95 % CI of ±3.2 µm (0.4 %); see
+measurement gives Rx/Ry = 833.0/827.0 µm, against 834.0/830.3 µm on the clean
+twin: Rx is 1.0 µm off, well inside its 95 % CI of ±3.3 µm (0.4 %), and Ry
+3.3 µm off, right at its CI. That is what a 95 % interval allows; see
 `docs/figures/radius_twins.png`.
 
 **Why it holds:**
@@ -317,14 +318,21 @@ twin. That's within its 95 % CI of ±3.2 µm (0.4 %); see
   smoothed copy) are unaffected.
 - **No local derivatives are used**, because derivatives amplify noise. The
   single-profile circle fits show what happens otherwise: on the noisy dome
-  they give 858.7/804.1 µm, while the 2-D fit gives 833.4/827.5.
+  they give 858.9/797.6 µm, while the 2-D fit gives 833.0/827.0.
 
 **What I would change for much noisier data, or a different kind of noise:**
 
-- **Outliers, spikes or dropouts** (dust, invalid pixels) do not average out.
-  For those I would switch the surface fit to a robust loss (Huber or
-  soft-L1), or to iterative clipping as already done for the Pivot planes.
-  NaN pixels are already excluded.
+- **Outliers, spikes and dust do not average out, so the code handles them
+  explicitly** (details and tests in "Assumptions, artefacts and limits" at
+  the end):
+  - the dome fit drops pixels whose residual exceeds max(5 robust standard
+    deviations, 0.1 µm), refits, and reports the share it dropped
+    (`xpander_outlier_pct`). The threshold follows the surface's own spread,
+    so a genuinely noisy dome is never "cleaned": its noise is reported and
+    flagged;
+  - the apex and the edge of the dome are found on a copy with spikes and
+    dust particles removed;
+  - missing (NaN) pixels are excluded from every fit.
 - **Spatially correlated noise.** The covariance-based CI assumes independent
   pixels, so it would be optimistic. I would use a block bootstrap, or
   repeated fits on sub-apertures, to estimate the uncertainty instead.
@@ -356,7 +364,7 @@ One file stands out:
   - The step is still measured as 18.214 µm, against 18.171 µm on the clean
     twin. The 0.043 µm gap is about 2.7 times the statistical error that this
     noise causes on a plane of roughly 1,500 px.
-- **Xpander:** fit RMS **231 nm** (nRMS 16 %, R² 0.765), against 8–9 nm.
+- **Xpander:** fit RMS **231 nm** (nRMS 16 %, R² 0.759), against 8–9 nm.
   The noise is uniform between −0.4 and +0.4 µm and spatially white (figure
   `results/figures/task1/6.png`, panel 4).
 
@@ -493,14 +501,14 @@ cross lands within 0.23 px of its dataset-1 twin.
 | 3 | 18.122 | 506.68, 776.45 | 507.35, 894.10 | 826.1 ± 2.14 | 820.7 ± 2.11 |
 | 4 | 18.114 | 524.13, 776.09 | 521.80, 893.72 | 828.0 ± 0.11 | 823.1 ± 0.10 |
 | 5 | 18.130 | 502.46, 769.69 | 504.00, 887.26 | 831.2 ± 0.11 | 826.8 ± 0.11 |
-| 6 | 18.171 | 522.93, 766.80 | 521.35, 884.50 | 833.8 ± 0.11 | 830.5 ± 0.11 |
+| 6 | 18.171 | 522.93, 766.80 | 521.35, 884.50 | 834.0 ± 0.12 | 830.3 ± 0.11 |
 | 7 | 18.191 | 514.51, 766.46 | 515.23, 884.15 | 831.4 ± 0.11 | 824.4 ± 0.11 |
 | 8 | 18.145 | 521.85, 771.23 | 521.05, 888.63 | 829.7 ± 0.11 | 824.3 ± 0.11 |
 | 9 | 18.116 | 501.99, 766.54 | 504.07, 884.23 | 827.5 ± 0.10 | 823.5 ± 0.10 |
 | 10 | 18.145 | 511.81, 770.76 | 511.76, 888.18 | 823.2 ± 0.11 | 818.0 ± 0.11 |
 | 11 | 18.224 | 524.03, 764.22 | 523.22, 881.84 | 843.8 ± 0.11 | 838.0 ± 0.11 |
 | 12 | 18.221 | 495.24, 771.71 | 496.05, 889.41 | 819.9 ± 0.11 | 831.7 ± 0.11 |
-| 13 | 18.206 | 531.41, 762.45 | 529.33, 879.99 | 829.8 ± 2.15 | 822.1 ± 2.11 |
+| 13 | 18.206 | 531.41, 762.45 | 529.33, 879.99 | 830.1 ± 2.18 | 822.3 ± 2.14 |
 | 14 | 18.224 | 494.57, 767.51 | 496.16, 885.11 | 814.5 ± 0.11 | 825.8 ± 0.11 |
 
 In the corrected frame, all extracted parameters match dataset 1:
@@ -529,18 +537,18 @@ In the corrected frame, all extracted parameters match dataset 1:
 | 10 | 8.2 | 0.56 | 0.9996 |
 | 11 | 7.7 | 0.53 | 0.9997 |
 | 12 | 7.7 | 0.54 | 0.9996 |
-| **13** | **153.6** | **10.61** | **0.8801** |
+| **13** | **153.5** | **10.69** | **0.8783** |
 | 14 | 8.0 | 0.55 | 0.9996 |
 
 **Is it still a good grading method? No, not for grading the *extracted
 radius*.** This dataset exposes two weaknesses.
 
 1. **It grades the surface, not the measurement.**
-   - Files 3 and 13 score badly (nRMS 10.6 %, R² 0.88) because their domes
+   - Files 3 and 13 score badly (nRMS 10.6–10.7 %, R² 0.88) because their domes
      are noisy.
    - Yet their radii are accurate. File 3 gives Rx/Ry = 826.1/820.7 µm against
-     827.2/821.4 µm on its clean twin, and file 13 gives 829.8/822.1 against
-     829.1/822.7. Both are off by 0.6–1.1 µm (≤ 0.13 %), within their CI.
+     827.2/821.4 µm on its clean twin, and file 13 gives 830.1/822.3 against
+     829.1/822.7. Both are off by 0.3–1.1 µm (≤ 0.14 %), within their CI.
    - nRMS is a good *fault detector* for the surface, but a poor grade for
      the number we report.
 2. **It depends on how the data was processed, not on the chip.**
@@ -609,8 +617,8 @@ Two refinements:
 - **File 7 — Pivot faulty (noisy).** Plane-fit RMS **396 / 372 nm**, against
   40–54 / 20–25 nm. The noise is bounded at about ±1 µm with std 0.36–0.38 µm.
   The step is still 18.191 µm (twin 18.182). The Xpander is clean.
-- **File 13 — Xpander faulty (noisy).** Fit RMS **154 nm** (nRMS 10.6 %,
-  R² 0.880), with the same grid texture. Radius 829.8/822.1 µm (twin
+- **File 13 — Xpander faulty (noisy).** Fit RMS **154 nm** (nRMS 10.7 %,
+  R² 0.878), with the same grid texture. Radius 830.1/822.3 µm (twin
   829.1/822.7).
   - Its plane 2 is unusually *smooth* (20 nm against 22–25 nm). That is not
     a defect, so it is not flagged: for roughness and axis offsets the
@@ -624,22 +632,65 @@ Details for each file: `results/fault_analysis.md`.
 
 ---
 
-## Assumptions and limitations
+## Assumptions, artefacts and limits
 
-- **Units.** Heights are assumed to be µm (`--z-scale` converts other units),
-  and the pixel size is 0.252 µm (`--pixel-size`).
-- **Chip family.** The scans show the same chip family: a Pivot with a ramp,
-  and an Xpander along the axis on the low-plane side.
-- **Rotation range.** The fine rotation is measured within ±10° of a multiple
-  of 90°, and the quarter turn comes from the ramp direction. A rotation
-  further than 10° from a quarter turn would need a wider edge search.
-- **Nominal spec.** The nominal values (step 18.18 ± 0.30 µm, radius
-  826 ± 30 µm) are estimated from the clean provided files. For another
-  design they should come from the design spec (`--nominal-step`,
-  `--nominal-radius`).
-- **Aperture.** The Xpander radius depends slightly (0.4–2 %) on the aperture,
-  because the real profile is not exactly a quadric. The aperture rule is
-  therefore fixed and reported.
+Teramount confirmed that the test scans use the same units and pixel size,
+and a similar chip design. They also pointed out that real scans can carry
+artefacts, so this section lists every assumption the code makes, every
+artefact it handles (with the test that proves it), and what it deliberately
+does not handle, and why.
+
+### Assumptions
+
+| Assumption | Why it holds | If it does not hold |
+|---|---|---|
+| Heights in µm, pixels of 0.252 µm | Confirmed by Teramount for the test data. | `--z-scale` and `--pixel-size`. Every size setting is in µm, so it scales; the tests also run at 0.35 and 0.5 µm/px. |
+| The chip family: a Pivot (two flat planes, a ramp between them, a recessed cross on each plane) with the Xpander dome along the same axis on the low side of the ramp | Confirmed as "similar"; true in all 30 scans. | The missing element is reported "not found" with the reason, never measured on the wrong structure. |
+| Plane 2 is the highest flat plateau lying fully inside the scan | True in all scans; the only other tall plateau (23.5 µm) is lower than plane 2 (31 µm). | A larger, taller flat object (big debris) would be taken for plane 2; the orientation or plane-1 search then fails with a clear reason. |
+| The chip axes are within ±10° of the image axes, up to a quarter turn | The microscope aligns the chip; dataset 2 is within ±1°. | No straight edge is found: warning `rotation_not_measured`, and the scan is analysed as unrotated. |
+| The base is a plane (tilt only) | Base residual about 12 nm after the RANSAC plane. | A bowed base is not modelled; a bow with a radius above 1 m would change R by less than 0.7 µm, and the Pivot step is measured locally. |
+| The dome is smooth and convex, close to a paraboloid over the fit area | Sphere and paraboloid differ by ≤ 1.5 nm over the aperture; the exact sphere fit agrees within 0.09 %. | A non-convex dome is reported "surface not convex". |
+| Neighbouring domes are separated by valleys or steps | Layout of the chip; all scans. | The fit area is limited and the reason is reported. |
+| Nominal spec 18.18 ± 0.30 µm and 826 ± 30 µm | Estimated from the clean provided files; the design is "similar". | `--nominal-step`, `--nominal-radius`. The geometric and statistical checks do not depend on them. |
+| Noise limits: plane RMS 150 nm, dome RMS 30 nm (after outliers are dropped) | Clean surfaces: 20–55 nm and 7–9 nm; the noisy ones: 370–590 nm and 150–230 nm. | Settings in `config.py`. |
+
+### Artefacts the code handles
+
+| Artefact | What it did before | How it is handled | Proven by |
+|---|---|---|---|
+| Random noise | — | Least squares over more than 100,000 points; confidence intervals reported; a noisy surface is flagged by its absolute RMS. | Noisy files 6 (dataset 1), 3, 7, 13 (dataset 2); `test_noisy_dome_*`. |
+| Single-pixel spikes (dust glints, bad pixels) | Every clean dome was flagged "noisy". | The dome fit drops outliers and reports their share; the plane fits drop outliers (3σ); segmentation uses a median filter; in a cross centroid no pixel counts for more than a floor pixel. | `test_dust_spikes_*`, `test_deep_spikes_inside_a_cross_*` (6 spikes: 0.8 px → < 0.2 px), real scans with spikes. |
+| Dust particles up to 10 µm | A 3 µm particle on the dome, or between the Pivot and the dome, made the Xpander "not found". | The apex and the dome edge are found on a copy with particles removed (grey opening); the fit then drops the particle's pixels. | `test_dust_particle_*` (3 positions), real scans with dust. |
+| Missing pixels (NaN), including dropouts on steep walls | — | Filled only to find things; excluded from every fit; the rotation never measures a filled pixel. | `test_nan_*`, `test_clustered_nan_*`, `test_wall_dropouts_*`, real scans with dropouts. |
+| Scan-line streaks (each line offset by its own height) | 50 nm streaks raised false "noisy dome" and "planes not parallel" faults. | Measured on every scan (`streak_level_um`; clean scans: under 1 nm) and removed when above 10 nm, with the warning `scan_line_streaks_removed`. | `test_streaks.py`, `test_scan_line_streaks_*`, real scans with streaks. |
+| Ringing ("batwings") at steep edges | — | Plane fits exclude a 0.5 µm edge margin; the rotation reads each edge's plateaus away from the edge, and takes the median of 32–46 edges. | Real scans with 10 % edge ringing. |
+| Tilt and height offset | — | RANSAC base plane, subtracted. | Dataset 2; `test_tilt.py`. |
+
+`tests/test_real_artifacts.py` adds each artefact, and all of them together,
+to three real scans: a standard chip, the other variant (file 12) and the
+noisy file 6. The step stays within 0.03 µm, the radii within 0.3 % (or
+twice the scan's own uncertainty on the noisy dome), the crosses within
+0.3 px, and the faulty / clean verdict does not change.
+
+### Not handled, by choice
+
+- **Particles wider than 10 µm and debris taller than plane 2.** They are the
+  size of the chip's own features, so they cannot be told apart from them
+  without the design layout. Inside the fit area their pixels are still
+  dropped as outliers (and counted); elsewhere they make an element "not
+  found" with a reason, never a wrong measurement in silence.
+- **Pits and scratches** are not removed from the copy used to find the dome,
+  because removing pits would also fill the valleys that separate
+  neighbouring domes. Inside the fit area they are dropped as outliers.
+- **The slow part of scan-line streaks** cannot be told apart from the real
+  surface shape. With 50 nm streaks it shifts the radius along the streak
+  direction by up to 0.5 %, corrected or not.
+- **A bowed base** (see above) and **saturated or clipped heights**, which
+  none of the scans show.
+- **Rotations further than 10° from a quarter turn** (see above).
+- **The aperture.** The radius depends slightly (0.4–2 %) on the fit area,
+  because the real profile is not exactly a quadric. The fit area therefore
+  follows a fixed rule and is reported.
 
 ## Reproducing every number
 

@@ -180,6 +180,7 @@ def _summary_text(result: ScanResult, config: Config) -> str:
         f" total    {f('tilt_total_deg', '.4f')} deg",
         f" rotation {f('rotation_deg', '+.3f')} +/- {f('rotation_se_deg', '.3f')} deg"
         f" ({f('rotation_lines', '.0f')} edges)",
+        f" scan-line streaks {f('streak_level_um', '.1f', 1000)} nm",
         "",
         "PIVOT",
         f" height diff   {f('pivot_height_diff_um', '.3f')} µm",
@@ -201,6 +202,7 @@ def _summary_text(result: ScanResult, config: Config) -> str:
         f" profile Rx/Ry  {f('xpander_rx_profile_um', '.1f')} /"
         f" {f('xpander_ry_profile_um', '.1f')}",
         f" RMS {f('xpander_rms_um', '.1f', 1000)} nm  nRMS {f('xpander_nrms_pct', '.2f')} %",
+        f" outlier pixels dropped {f('xpander_outlier_pct', '.2f')} %",
         f" R²  {f('xpander_r_squared', '.4f')}",
         f" stability over apertures {f('xpander_stability_pct', '.2f')} %",
         "",

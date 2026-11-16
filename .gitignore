@@ -5,3 +5,4 @@ __pycache__/
 .claude/
 15_files_task_*/
 *.docx
+.coverage

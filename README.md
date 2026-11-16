@@ -36,7 +36,8 @@ py run.py --data 15_files_task_1 --name task1
 py run.py --data 15_files_task_2 --name task2
 ```
 
-Each command analyses every scan in the folder (about 10 s per scan). It
+Each command analyses every scan in the folder (10–20 s per scan, depending
+on the computer). It
 writes:
 
 - `results/task1_results.csv` — one row per scan,
@@ -102,6 +103,9 @@ just like an unreadable file.
 
 ## What it does
 
+0. **Artefacts.** Scan-line streaks are measured on every scan and removed
+   when clearly present (above 10 nm). Spikes, dust and missing pixels are
+   dealt with in the steps that meet them, as described below.
 1. **Tilt.** The base, the large flat surface around the structures, is found
    with RANSAC on the flat pixels and refined with a robust plane fit. It is
    then subtracted, so every height is relative to the base.
@@ -155,14 +159,15 @@ coordinates transformed into the corrected frame.
 
 | Group | Columns |
 |---|---|
-| Identity | `file`, `status` (`ok` / `partial` / `failed`), `error`, `warnings` (limits of the analysis, e.g. `rotation_not_measured`; never a fault) |
+| Identity | `file`, `status` (`ok` / `partial` / `failed`), `error`, `warnings` (limits of the analysis, never a fault: `rotation_not_measured`, `scan_line_streaks_removed`, `xpander_outliers_removed` when more than 1 % of the dome pixels were dropped) |
+| Data quality | `streak_level_um` (scan-line streaks found; removed above 0.01 µm) |
 | Tilt | `tilt_x_deg`, `tilt_y_deg` (slope angles along x and y), `tilt_total_deg`, `tilt_azimuth_deg`, `base_rms_um` |
 | Rotation | `rotation_deg`, `rotation_se_deg` (standard error), `rotation_lines` (edges used) |
 | Pivot | `pivot_height_diff_um` (crosses excluded), `pivot_height_diff_with_crosses_um` (for comparison), `plane1_rms_um`, `plane2_rms_um`, `plane_parallelism_deg` |
 | Crosses (1 = plane 1, 2 = plane 2) | `crossN_x_px`, `crossN_y_px`, `crossN_x_um`, `crossN_y_um`, `crossN_u_px`, `crossN_v_px`, `crossN_depth_um`, `crossN_axis_offset_um` |
 | Xpander position | `xpander_apex_x_px`, `xpander_apex_y_px`, `xpander_apex_u_px`, `xpander_apex_v_px`, `xpander_apex_z_um`, `xpander_apex_axis_offset_um` |
 | Xpander curvature | `xpander_rx_um`, `xpander_ry_um`, `xpander_rx_ci95_um`, `xpander_ry_ci95_um`, `xpander_r1_um`, `xpander_r2_um`, `xpander_principal_angle_deg` |
-| Xpander fit quality | `xpander_rms_um`, `xpander_nrms_pct` (RMS / sag), `xpander_r_squared`, `xpander_sag_um`, `xpander_aperture_radius_um`, `xpander_stability_pct` |
+| Xpander fit quality | `xpander_rms_um` (after outliers are dropped), `xpander_outlier_pct` (share of dome pixels dropped as spikes or dust), `xpander_nrms_pct` (RMS / sag), `xpander_r_squared`, `xpander_sag_um`, `xpander_aperture_radius_um`, `xpander_stability_pct` |
 | Xpander cross-checks | `xpander_r_sphere_um`, `xpander_rx_profile_um`, `xpander_ry_profile_um` |
 | Faults | `geometric_flags`, `nominal_flags`, `statistical_flags` (`;`-separated), `faulty` (`yes` when a geometric or nominal check failed) |
 
@@ -182,15 +187,19 @@ Each figure (`results/figures/<name>/<scan>.png`) has six panels:
 
 ```bash
 py -m pip install -r requirements-dev.txt
-py -m pytest                                   # everything (~13 min, includes the real data)
-py -m pytest -m "not slow and not realdata"    # quick run (~4 min)
+py -m pytest                                   # everything (20-30 min, includes the real data)
+py -m pytest -m "not slow and not realdata"    # quick run (5-10 min)
+py -m pytest --cov=teramount_analysis          # with line coverage
 py -m ruff check .                             # lint
 ```
 
 The tests run the analysis on **synthetic scans with known ground truth**:
 `tests/synthetic.py` generates scans with a chosen tilt, rotation, noise,
-radii, missing crosses and so on. When the provided data folders are present,
-`tests/test_real_data.py` also checks the results on the real scans.
+radii, missing crosses and so on, and adds measurement artefacts (spikes,
+dust particles, scan-line streaks, edge ringing, missing pixels). When the
+provided data folders are present, `tests/test_real_data.py` checks the
+results on the real scans, and `tests/test_real_artifacts.py` adds every
+artefact to real scans and checks that the results and verdicts hold.
 
 ## Project layout
 
@@ -234,16 +243,26 @@ docs/design.md             design document; docs/implementation-plan.md: build p
 - **Resampling.** Resampled images are used only to locate things. Plane fits,
   cross centres and the dome fit use the original pixels.
 
-## Assumptions and limitations
+## Assumptions, artefacts and limits
 
-- Heights are in µm, or are converted with `--z-scale`.
+The full list, with the reason for each assumption, how each artefact is
+handled and which test proves it, and what is deliberately not handled, is in
+[ANSWERS.md, "Assumptions, artefacts and limits"](ANSWERS.md#assumptions-artefacts-and-limits).
+In short:
+
+- Heights are in µm and pixels 0.252 µm (confirmed for the test data); other
+  values via `--z-scale` and `--pixel-size`.
 - The scans show the same chip family: a Pivot with a ramp and an Xpander on
   the low side of the ramp.
-- The fine rotation search covers ±10° around each multiple of 90°; the
-  quarter turn itself (0°, 90°, 180° or 270°) is detected from the ramp
-  direction. A rotation further than 10° from a quarter turn is not
-  supported: no straight edge is found, and the scan is analysed as
-  unrotated with the warning `rotation_not_measured`.
+- **Handled artefacts:** random noise, single-pixel spikes, dust particles up
+  to 10 µm, missing pixels (including dropouts on steep walls), scan-line
+  streaks, ringing at steep edges, tilt and height offsets.
+- **Not handled, by choice:** particles wider than 10 µm and debris taller than
+  plane 2 (the size of the chip's own features), the slow part of scan-line
+  streaks (indistinguishable from the surface), a bowed base, saturated
+  heights, and rotations further than 10° from a quarter turn. None of them
+  leads to a silent wrong measurement: the element is reported "not found"
+  with a reason, or the outliers are counted.
 - A channel cut by the image border, or by the empty corners of a rotated
   scan, is reported as not found with the reason. It is never measured on
   part of the element.
