@@ -37,7 +37,7 @@ from .pivot import find_plane2, measure_pivot, quarter_turns_for, ramp_direction
 from .results import FaultReport, ScanDebug, ScanResult
 from .rotation import estimate_rotation
 from .streaks import remove_streaks
-from .surface import segmentation_surface
+from .surface import flat_mask, segmentation_surface
 from .tilt import fit_base_plane, remove_tilt
 from .xpander import measure_xpander
 
@@ -69,10 +69,11 @@ def analyse_scan(z: np.ndarray, config: Config, name: str = "") -> ScanResult:
 def _run(z: np.ndarray, config: Config, result: ScanResult) -> None:
     """Fill ``result`` step by step; raises AnalysisError on a blocking problem."""
     z = check_height_map(z, result.file or "scan")
-    z, result.streaks = remove_streaks(z, config)
+    flat = flat_mask(segmentation_surface(z, config), config)  # shared: one smoothing pass
+    z, result.streaks = remove_streaks(z, config, flat)
     if result.streaks.corrected:
         result.warnings = (*result.warnings, "scan_line_streaks_removed")
-    result.tilt = fit_base_plane(z, config)
+    result.tilt = fit_base_plane(z, config, flat)
     z_leveled = remove_tilt(z, result.tilt, config)
     result.debug = ScanDebug(z_leveled)
 

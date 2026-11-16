@@ -35,7 +35,7 @@ class TiltResult:
     base_fraction: float  # share of the scan identified as base
 
 
-def fit_base_plane(z: np.ndarray, config: Config) -> TiltResult:
+def fit_base_plane(z: np.ndarray, config: Config, flat: np.ndarray | None = None) -> TiltResult:
     """Measure the tilt of the scan from its base plane.
 
     Parameters
@@ -44,6 +44,8 @@ def fit_base_plane(z: np.ndarray, config: Config) -> TiltResult:
         Height map in µm (may contain NaNs).
     config
         Analysis configuration.
+    flat
+        Flat-pixel mask of ``z`` if already computed (saves a smoothing pass).
 
     Raises
     ------
@@ -52,7 +54,9 @@ def fit_base_plane(z: np.ndarray, config: Config) -> TiltResult:
     """
     p = config.pixel_size_um
     valid = np.isfinite(z)
-    flat = flat_mask(segmentation_surface(z, config), config) & valid
+    if flat is None:
+        flat = flat_mask(segmentation_surface(z, config), config)
+    flat = flat & valid
     if flat.mean() < 0.01:
         raise FitError("too few flat pixels to find the base plane")
     rows, cols = np.nonzero(flat)

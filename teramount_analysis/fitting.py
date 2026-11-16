@@ -255,7 +255,9 @@ def fit_profile_circle(s: np.ndarray, z: np.ndarray) -> tuple[float, float]:
     if s.size < 5:
         raise FitError(f"profile circle fit needs >= 5 points, got {s.size}")
     p2, p1, p0 = np.polyfit(s, z, 2)
-    if p2 == 0:
+    # Straight when the curvature changes the height by a negligible fraction of the
+    # profile's height range (rounding leaves p2 ~ 1e-17, never exactly 0).
+    if abs(p2) * (np.ptp(s) / 2) ** 2 <= 1e-9 * max(float(np.ptp(z)), 1e-12):
         raise FitError("profile is straight; no curvature")
     s0 = -p1 / (2 * p2)
     apex = p0 + p1 * s0 + p2 * s0**2

@@ -129,19 +129,6 @@ def _apex_seed(zs: np.ndarray, regions: PivotRegions, config: Config,
     return float(c0 + du), float(r0 + dv)
 
 
-def locate_apex(z_canonical: np.ndarray, regions: PivotRegions, config: Config,
-                valid: np.ndarray | None = None) -> tuple[float, float]:
-    """Canonical ``(u, v)`` seed of the Xpander apex.
-
-    Raises
-    ------
-    ElementNotFoundError
-        If no prominent dome lies above the Pivot.
-    """
-    return _apex_seed(_detection_surface(z_canonical, config), regions, config,
-                      valid)
-
-
 def boundary_rays(z_smooth: np.ndarray, apex_uv: tuple[float, float], config: Config,
                   valid: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Distance (px) from the apex to the dome boundary along each ray.
@@ -262,8 +249,12 @@ def measure_xpander(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray
     ``found=False`` with the reason instead.
     """
     p = config.pixel_size_um
-    zs = _detection_surface(z_canonical, config)
-    valid = frame.canonical_valid()  # False on extrapolated corners of a rotated scan
+    # The dome lies above the Pivot in the canonical frame, so only the rows down to just
+    # below the top of plane 1 are needed (the rays stop at the step up to plane 1).
+    top = int(np.nonzero(regions.plane1.any(axis=1))[0].min())
+    end = min(z_canonical.shape[0], top + config.whole_px(20.0))
+    zs = _detection_surface(z_canonical[:end], config)
+    valid = frame.canonical_valid()[:end]  # False on extrapolated corners of a rotated scan
     try:
         u0, v0 = _apex_seed(zs, regions, config, valid)
     except ElementNotFoundError as exc:

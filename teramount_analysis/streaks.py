@@ -62,8 +62,11 @@ def _level(offsets: np.ndarray) -> float:
     return float(_MAD_TO_SIGMA * np.median(np.abs(offsets - np.median(offsets))))
 
 
-def remove_streaks(z: np.ndarray, config: Config) -> tuple[np.ndarray, StreakResult]:
+def remove_streaks(z: np.ndarray, config: Config, flat: np.ndarray | None = None
+                   ) -> tuple[np.ndarray, StreakResult]:
     """Measure scan-line streaks and subtract them when clearly present.
+
+    ``flat`` is the flat-pixel mask of ``z`` if already computed.
 
     Returns
     -------
@@ -71,7 +74,9 @@ def remove_streaks(z: np.ndarray, config: Config) -> tuple[np.ndarray, StreakRes
         ``z`` itself when nothing was corrected, otherwise a corrected copy
         (NaN pixels stay NaN), and what was found.
     """
-    flat = flat_mask(segmentation_surface(z, config), config) & np.isfinite(z)
+    if flat is None:
+        flat = flat_mask(segmentation_surface(z, config), config)
+    flat = flat & np.isfinite(z)
     sigma = config.px(config.streak_trend_um)
     rows = _line_offsets(z, flat, sigma)
     cols = _line_offsets(z.T, flat.T, sigma)
