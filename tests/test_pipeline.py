@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from synthetic import make_scan
+from synthetic import add_streaks, make_scan
 
 from teramount_analysis import Config, analyse_dataset, analyse_file, analyse_scan
 from teramount_analysis.io import discover_scans
@@ -191,3 +191,24 @@ def test_dataset_applies_statistics(tmp_path):
     assert seen == [True] * 7
     assert "xpander_rx_um_outlier" in res[-1].faults.statistical and res[0].debug is None
     assert all("xpander_rx_um_outlier" not in r.faults.statistical for r in res[:-1])
+
+
+def test_scan_line_streaks_are_removed_before_measuring():
+    # 50 nm streaks used to raise false "noisy dome" and "planes not parallel" faults.
+    z, _ = make_scan(rotation_deg=0.5)
+    r = analyse_scan(add_streaks(z, 0.05), Config())
+    m = r.metrics(Config())
+    assert r.status == "ok" and not r.faults.faulty, (r.error, r.faults)
+    assert "scan_line_streaks_removed" in r.warnings
+    assert m["streak_level_um"] == pytest.approx(0.05, rel=0.25)
+    assert m["pivot_height_diff_um"] == pytest.approx(18.1, abs=0.02)
+    assert m["xpander_rx_um"] == pytest.approx(820, rel=0.003)
+    # Along the streak direction the slow part of random line offsets cannot be told
+    # apart from the surface: 50 nm streaks leave up to 0.5 % on Ry, corrected or not.
+    assert m["xpander_ry_um"] == pytest.approx(840, rel=0.006)
+
+
+def test_clean_scan_reports_its_streak_level_without_correcting():
+    z, _ = make_scan()
+    r = analyse_scan(z, Config())
+    assert r.metrics(Config())["streak_level_um"] < 0.005 and r.warnings == ()

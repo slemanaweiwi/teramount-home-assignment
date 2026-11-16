@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from helpers import prepare, run_xpander
-from synthetic import make_scan
+from synthetic import add_particle, add_spikes, make_scan
 
 from teramount_analysis.config import Config
 from teramount_analysis.frame import Frame
@@ -145,7 +145,7 @@ def test_unstable_apex_is_reported_not_raised(monkeypatch):
         def vertex():
             return 100.0, 0.0  # µm; half the aperture is about 25 µm
 
-    monkeypatch.setattr(xpander_module, "_fit", lambda ap, pixel_size_um: FarVertex())
+    monkeypatch.setattr(xpander_module, "_fit", lambda ap, config: (FarVertex(), ap))
     z, _ = make_scan()
     x = run_xpander(z, 0.0)
     assert not x.found and "unstable" in x.reason
@@ -160,17 +160,50 @@ def test_saddle_surface_is_not_convex():
     z = 12.0 + (du * 0.252) ** 2 / (2 * 5000) - (dv * 0.252) ** 2 / (2 * 840)
     ap = _Aperture(np.zeros(du.size, int), np.zeros(du.size, int), du, dv, z)
     with pytest.raises(FitError, match="not convex"):
-        _fit(ap, 0.252)
+        _fit(ap, Config())
 
 
 def test_fit_failure_in_the_aperture_loop_is_reported(monkeypatch):
     import teramount_analysis.xpander as xpander_module
     from teramount_analysis.errors import FitError
 
-    def saddle(ap, pixel_size_um):
+    def saddle(ap, config):
         raise FitError("surface not convex")
 
     monkeypatch.setattr(xpander_module, "_fit", saddle)
     z, _ = make_scan()
     x = run_xpander(z, 0.0)
     assert not x.found and x.reason == "surface not convex"
+
+
+def test_dust_spikes_do_not_make_a_clean_dome_noisy():
+    # Single-pixel spikes of 2-10 um are excluded from the fit and counted.
+    z, _ = make_scan(rx_um=820, ry_um=840)
+    x = run_xpander(add_spikes(z, 0.002), 0.0)
+    assert x.found, x.reason
+    assert x.rms_um < 0.03 and x.outlier_pct > 0.05
+    assert x.rx_um == pytest.approx(820, rel=0.003) and x.ry_um == pytest.approx(840, rel=0.003)
+
+
+def test_genuine_noise_is_not_removed_as_outliers():
+    z, _ = make_scan(xpander_noise_um=0.2)
+    x = run_xpander(z, 0.0)
+    assert x.rms_um > 0.15 and x.outlier_pct < 0.1
+
+
+def test_clean_dome_has_no_outliers():
+    z, _ = make_scan()
+    assert run_xpander(z, 0.0).outlier_pct == 0.0
+
+
+@pytest.mark.parametrize("dx_um, dy_um", [(20, 15), (0, 50), (40, 0)])
+def test_dust_particle_does_not_hide_or_shrink_the_dome(dx_um, dy_um):
+    # A 3 um particle: inside the fit area, on the axis between the Pivot and the
+    # dome (where it looks like an apex), and on the ray that sizes the aperture.
+    z, t = make_scan(rx_um=820, ry_um=840)
+    ax, ay = t.apex_xy_px
+    x = run_xpander(add_particle(z, (ax + dx_um / 0.252, ay + dy_um / 0.252), 3.0, 3.0), 0.0)
+    assert x.found, x.reason
+    assert x.aperture_radius_um == pytest.approx(0.8 * 63, rel=0.1)
+    assert x.rx_um == pytest.approx(820, rel=0.003) and x.ry_um == pytest.approx(840, rel=0.003)
+    assert x.rms_um < 0.03

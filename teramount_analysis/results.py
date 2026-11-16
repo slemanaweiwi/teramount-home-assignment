@@ -15,12 +15,14 @@ from .crosses import CrossResult
 from .frame import Frame
 from .pivot import PivotRegions, PivotResult
 from .rotation import RotationResult
+from .streaks import StreakResult
 from .tilt import TiltResult
 from .xpander import XpanderResult
 
 _CROSS_FIELDS = ("x_px", "y_px", "x_um", "y_um", "u_px", "v_px", "depth_um", "axis_offset_um")
 
 METRIC_COLUMNS: tuple[str, ...] = (
+    "streak_level_um",
     "tilt_x_deg", "tilt_y_deg", "tilt_total_deg", "tilt_azimuth_deg", "base_rms_um",
     "rotation_deg", "rotation_se_deg", "rotation_lines",
     "pivot_height_diff_um", "pivot_height_diff_with_crosses_um", "plane1_rms_um",
@@ -30,7 +32,8 @@ METRIC_COLUMNS: tuple[str, ...] = (
     "xpander_apex_z_um", "xpander_apex_axis_offset_um", "xpander_rx_um", "xpander_ry_um",
     "xpander_rx_ci95_um",
     "xpander_ry_ci95_um", "xpander_r1_um", "xpander_r2_um", "xpander_principal_angle_deg",
-    "xpander_rms_um", "xpander_nrms_pct", "xpander_r_squared", "xpander_sag_um",
+    "xpander_rms_um", "xpander_outlier_pct", "xpander_nrms_pct", "xpander_r_squared",
+    "xpander_sag_um",
     "xpander_aperture_radius_um", "xpander_r_sphere_um", "xpander_rx_profile_um",
     "xpander_ry_profile_um", "xpander_stability_pct",
 )
@@ -74,6 +77,7 @@ class ScanResult:
     # Limits of the analysis that are not chip defects, e.g. "rotation_not_measured"
     # (the scan was then analysed as unrotated). They never make a scan faulty.
     warnings: tuple[str, ...] = ()
+    streaks: StreakResult | None = None  # scan-line streaks found (and removed if clear)
     tilt: TiltResult | None = None
     rotation: RotationResult | None = None  # None when not measured
     frame: Frame | None = None
@@ -89,6 +93,8 @@ class ScanResult:
         """Flat ``{column: value}`` map with every key of METRIC_COLUMNS (NaN if unknown)."""
         p = config.pixel_size_um
         m: dict[str, float] = dict.fromkeys(METRIC_COLUMNS, float("nan"))
+        if self.streaks is not None:
+            m["streak_level_um"] = self.streaks.level_um
         if self.tilt is not None:
             t = self.tilt
             m.update(tilt_x_deg=t.tilt_x_deg, tilt_y_deg=t.tilt_y_deg,
@@ -120,6 +126,7 @@ class ScanResult:
                 xpander_ry_um=x.ry_um, xpander_rx_ci95_um=x.rx_ci95_um,
                 xpander_ry_ci95_um=x.ry_ci95_um, xpander_r1_um=x.r1_um, xpander_r2_um=x.r2_um,
                 xpander_principal_angle_deg=x.principal_angle_deg, xpander_rms_um=x.rms_um,
+                xpander_outlier_pct=x.outlier_pct,
                 xpander_nrms_pct=x.nrms_pct, xpander_r_squared=x.r_squared,
                 xpander_sag_um=x.sag_um, xpander_aperture_radius_um=x.aperture_radius_um,
                 xpander_r_sphere_um=x.r_sphere_um, xpander_rx_profile_um=x.rx_profile_um,

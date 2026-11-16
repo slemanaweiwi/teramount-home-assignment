@@ -46,3 +46,15 @@ def test_missing_cross_reported_not_raised():
     z, _ = make_scan(cross2=False)
     c1, c2 = run_crosses(z, 0.0)
     assert c1.found and not c2.found and np.isnan(c2.x_px) and c2.mask is None
+
+
+@pytest.mark.parametrize("n_spikes", [3, 6])
+def test_deep_spikes_inside_a_cross_do_not_pull_its_centre(n_spikes):
+    # Spikes 8 um deep in one arm used to shift the centre by 0.37 / 0.8 px.
+    z, t = make_scan()
+    cx, cy = t.cross2_xy_px
+    for dx in range(n_spikes):
+        z[int(round(cy)), int(round(cx)) + 8 + dx] -= 8.0
+    _, c2 = run_crosses(z, 0.0)
+    assert (c2.x_px, c2.y_px) == pytest.approx(t.cross2_xy_px, abs=0.2)
+    assert c2.depth_um == pytest.approx(1.5, abs=0.1)

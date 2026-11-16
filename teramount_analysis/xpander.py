@@ -35,9 +35,10 @@ from .errors import ElementNotFoundError, FitError
 from .fitting import QuadricFit, fit_profile_circle, fit_quadric, fit_sphere
 from .frame import Frame
 from .pivot import PivotRegions
-from .surface import slope, smooth
+from .surface import remove_small_bumps, slope, smooth
 
 _NAN = float("nan")
+_MAD_TO_SIGMA = 1.4826  # MAD of a normal distribution x 1.4826 = sigma
 
 
 @dataclass(frozen=True, eq=False)
@@ -70,16 +71,29 @@ class XpanderResult:
     rx_profile_um: float  # circle fit to the x profile through the apex [µm]
     ry_profile_um: float  # circle fit to the y profile through the apex [µm]
     stability_pct: float  # spread of R over the stability apertures [%]
+    outlier_pct: float  # share of aperture pixels dropped as outliers (spikes, dust) [%]
     n_points: int  # pixels in the fit
     residual_map: np.ndarray | None  # canonical-frame residuals [µm], NaN elsewhere
 
     @classmethod
     def not_found(cls, reason: str) -> XpanderResult:
         """Result for an Xpander that could not be measured."""
-        return cls(False, reason, *([_NAN] * 22), 0, None)
+        return cls(False, reason, *([_NAN] * 23), 0, None)
 
 
 _not_found = XpanderResult.not_found
+
+
+def _detection_surface(z_canonical: np.ndarray, config: Config) -> np.ndarray:
+    """Copy used to find the apex and the dome boundary.
+
+    A small median removes single-pixel spikes first (a min/max filter would
+    otherwise spread every downward spike over its whole window), then a grey
+    opening removes dust particles, then the copy is smoothed.
+    """
+    despiked = smooth(z_canonical, 0.0, config.odd_px(config.seg_median_um))
+    clean = remove_small_bumps(despiked, config.whole_px(config.xpander_particle_um))
+    return smooth(clean, config.px(config.xpander_smooth_um))
 
 
 def _apex_seed(zs: np.ndarray, regions: PivotRegions, config: Config,
@@ -124,7 +138,7 @@ def locate_apex(z_canonical: np.ndarray, regions: PivotRegions, config: Config,
     ElementNotFoundError
         If no prominent dome lies above the Pivot.
     """
-    return _apex_seed(smooth(z_canonical, config.px(config.xpander_smooth_um)), regions, config,
+    return _apex_seed(_detection_surface(z_canonical, config), regions, config,
                       valid)
 
 
@@ -198,11 +212,46 @@ def _select(z_leveled: np.ndarray, frame: Frame, u0: float, v0: float, radius_px
     return _Aperture(rr + r0, cc + c0, u[rr, cc] - u0, v[rr, cc] - v0, z[rr, cc])
 
 
-def _fit(ap: _Aperture, pixel_size_um: float) -> QuadricFit:
-    q = fit_quadric(ap.du * pixel_size_um, ap.dv * pixel_size_um, ap.z)
+def _subset(ap: _Aperture, keep: np.ndarray) -> _Aperture:
+    return _Aperture(ap.rows[keep], ap.cols[keep], ap.du[keep], ap.dv[keep], ap.z[keep])
+
+
+def _fit(ap: _Aperture, config: Config) -> tuple[QuadricFit, _Aperture]:
+    """Quadric fit that ignores outlier pixels (dust spikes, small particles).
+
+    Pixels whose residual differs from the median residual by more than
+    ``max(xpander_clip_sigma x robust sigma, xpander_clip_min_um)`` are dropped
+    and the fit is repeated until the set of kept pixels no longer changes.
+
+    Returns
+    -------
+    (fit, inliers)
+        The final fit and the aperture pixels it used.
+
+    Raises
+    ------
+    FitError
+        If the surface is not a dome (not convex) or too few pixels remain.
+    """
+    p = config.pixel_size_um
+    u, v = ap.du * p, ap.dv * p
+    keep = np.ones(ap.z.size, dtype=bool)
+    q = fit_quadric(u, v, ap.z)
+    for _ in range(10):
+        res = ap.z - q.evaluate(u, v)
+        med = float(np.median(res[keep]))
+        sigma = _MAD_TO_SIGMA * float(np.median(np.abs(res[keep] - med)))
+        new = np.abs(res - med) <= max(config.xpander_clip_sigma * sigma,
+                                       config.xpander_clip_min_um)
+        if np.array_equal(new, keep):
+            break
+        if new.sum() < 6:
+            raise FitError("too few dome pixels left after removing outliers")
+        keep = new
+        q = fit_quadric(u[keep], v[keep], ap.z[keep])
     if q.coeffs[3] >= 0 or q.coeffs[4] >= 0:
         raise FitError("surface not convex")
-    return q
+    return q, _subset(ap, keep)
 
 
 def measure_xpander(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray,
@@ -213,7 +262,7 @@ def measure_xpander(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray
     ``found=False`` with the reason instead.
     """
     p = config.pixel_size_um
-    zs = smooth(z_canonical, config.px(config.xpander_smooth_um))
+    zs = _detection_surface(z_canonical, config)
     valid = frame.canonical_valid()  # False on extrapolated corners of a rotated scan
     try:
         u0, v0 = _apex_seed(zs, regions, config, valid)
@@ -237,7 +286,7 @@ def measure_xpander(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray
             radius, problem = aperture(u0, v0)
             if problem:
                 return _not_found(problem)
-            q = _fit(_select(z_leveled, frame, u0, v0, radius), p)
+            q, _ = _fit(_select(z_leveled, frame, u0, v0, radius), config)
             du0, dv0 = q.vertex()
             if math.hypot(du0, dv0) / p > radius / 2:
                 return _not_found("apex unstable: the fitted vertex is more than half the "
@@ -246,15 +295,17 @@ def measure_xpander(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray
         radius, problem = aperture(u0, v0)
         if problem:
             return _not_found(problem)
-        ap = _select(z_leveled, frame, u0, v0, radius)
-        q = _fit(ap, p)
-        return _summarise(q, ap, frame, regions, u0, v0, radius, config)
+        aperture_pixels = _select(z_leveled, frame, u0, v0, radius)
+        q, ap = _fit(aperture_pixels, config)
+        outlier_pct = 100.0 * (1.0 - ap.z.size / aperture_pixels.z.size)
+        return _summarise(q, ap, frame, regions, u0, v0, radius, outlier_pct, config)
     except FitError as exc:  # e.g. a saddle-shaped fit with no unique vertex
         return _not_found(str(exc))
 
 
 def _summarise(q: QuadricFit, ap: _Aperture, frame: Frame, regions: PivotRegions, u0: float,
-               v0: float, radius_px: float, config: Config) -> XpanderResult:
+               v0: float, radius_px: float, outlier_pct: float, config: Config
+               ) -> XpanderResult:
     p = config.pixel_size_um
     c, cov = q.coeffs, q.cov
     du, dv = ap.du * p, ap.dv * p
@@ -324,6 +375,7 @@ def _summarise(q: QuadricFit, ap: _Aperture, frame: Frame, regions: PivotRegions
         rx_profile_um=profile(du, dv),
         ry_profile_um=profile(dv, du),
         stability_pct=float(stability),
+        outlier_pct=float(outlier_pct),
         n_points=q.n,
         residual_map=residual_map,
     )

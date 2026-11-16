@@ -2,6 +2,7 @@
 
 Steps for one scan:
 
+0. **Streaks** — remove scan-line streaks when clearly present.
 1. **Tilt** — fit the base plane and subtract it (heights become relative to
    the base, which also removes any absolute height offset).
 2. **Rotation** — measure the in-plane rotation from straight edges.
@@ -35,6 +36,7 @@ from .io import check_height_map, load_scan
 from .pivot import find_plane2, measure_pivot, quarter_turns_for, ramp_direction, segment_pivot
 from .results import FaultReport, ScanDebug, ScanResult
 from .rotation import estimate_rotation
+from .streaks import remove_streaks
 from .surface import segmentation_surface
 from .tilt import fit_base_plane, remove_tilt
 from .xpander import measure_xpander
@@ -67,6 +69,9 @@ def analyse_scan(z: np.ndarray, config: Config, name: str = "") -> ScanResult:
 def _run(z: np.ndarray, config: Config, result: ScanResult) -> None:
     """Fill ``result`` step by step; raises AnalysisError on a blocking problem."""
     z = check_height_map(z, result.file or "scan")
+    z, result.streaks = remove_streaks(z, config)
+    if result.streaks.corrected:
+        result.warnings = (*result.warnings, "scan_line_streaks_removed")
     result.tilt = fit_base_plane(z, config)
     z_leveled = remove_tilt(z, result.tilt, config)
     result.debug = ScanDebug(z_leveled)
@@ -115,6 +120,8 @@ def _run(z: np.ndarray, config: Config, result: ScanResult) -> None:
                 for n, c in ((1, result.cross1), (2, result.cross2)) if not c.found]
     if not result.xpander.found:
         problems.append(f"xpander not found: {result.xpander.reason}")
+    elif result.xpander.outlier_pct > config.xpander_max_outlier_pct:
+        result.warnings = (*result.warnings, "xpander_outliers_removed")
     result.status = "partial" if problems else "ok"
     result.error = "; ".join(problems)
 
