@@ -85,3 +85,8 @@ def test_figure_marks_the_dropped_dome_pixels(tmp_path):
     assert r.xpander.outlier_map is not None and r.xpander.outlier_map.sum() > 100
     save_scan_figure(r, tmp_path / "dust.png", Config())
     assert (tmp_path / "dust.png").stat().st_size > 20_000
+
+
+def test_csv_uses_lf_line_endings(tmp_path):
+    write_csv([fake_result()], tmp_path / "r.csv", Config())
+    assert b"\r\n" not in (tmp_path / "r.csv").read_bytes()

@@ -106,3 +106,14 @@ def test_planted_faults_flagged(t1_results, t2_results):
     assert not (NOISY_FLAGS & flags(t2_results[6]))  # clean twin of T1-6
     for i in (3, 7, 13):
         assert not (NOISY_FLAGS & flags(t1_results[i]))  # clean twins in dataset 1
+
+
+def test_clean_scans_carry_no_flags_and_no_warnings(t1_results, t2_results):
+    # Guards against false positives: every scan without a planted fault must come
+    # out clean - no geometric or nominal fault and no analysis warning.
+    planted = NOISY_XPANDER | NOISY_PIVOT
+    for tag, results in (("t1", t1_results), ("t2", t2_results)):
+        for i, r in enumerate(results):
+            if (tag, i) in planted:
+                continue
+            assert (r.faults.geometric, r.faults.nominal, r.warnings) == ((), (), ()), (tag, i)

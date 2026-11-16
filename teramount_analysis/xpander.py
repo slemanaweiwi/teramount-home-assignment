@@ -25,7 +25,7 @@ circle fits to the X and Y profiles through the apex.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, fields, replace
 
 import numpy as np
 from scipy.signal import find_peaks
@@ -78,11 +78,17 @@ class XpanderResult:
     n_points: int  # pixels in the fit
     residual_map: np.ndarray | None  # canonical-frame residuals [µm], NaN elsewhere
     outlier_map: np.ndarray | None  # canonical-frame pixels dropped from the fit
+    # True when the image border, not the dome's own valley, set the fit area: R then
+    # comes from a smaller part of the dome and can differ by 0.4-2 % (warning).
+    border_limited: bool = False
 
     @classmethod
     def not_found(cls, reason: str) -> XpanderResult:
         """Result for an Xpander that could not be measured."""
-        return cls(False, reason, *([_NAN] * 25), 0, None, None)
+        values: dict[str, object] = {f.name: _NAN for f in fields(cls)}
+        values.update(found=False, reason=reason, n_points=0, residual_map=None,
+                      outlier_map=None, border_limited=False)
+        return cls(**values)
 
 
 _not_found = XpanderResult.not_found
@@ -271,21 +277,23 @@ def measure_xpander(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray
     except ElementNotFoundError as exc:
         return _not_found(str(exc))
 
-    def aperture(u: float, v: float) -> tuple[float, str]:
-        """Aperture radius (px), and why it is too small ("" when usable)."""
+    def aperture(u: float, v: float) -> tuple[float, str, bool]:
+        """Aperture radius (px), why it is too small ("" when usable), and whether the
+        image border (rather than the dome's own boundary) set it."""
         dist, at_edge = boundary_rays(zs, (u, v), config, valid)
         shortest = int(np.argmin(dist))
         radius = config.xpander_aperture_fraction * float(dist[shortest])
+        border = bool(at_edge[shortest])
         if radius >= config.px(config.xpander_min_aperture_um):
-            return radius, ""
+            return radius, "", border
         size = f"aperture {config.um(radius):.1f} um < {config.xpander_min_aperture_um:g} um"
-        if at_edge[shortest]:
-            return radius, f"dome cut by the image border ({size})"
-        return radius, f"a neighbouring dome or a step is too close to the apex ({size})"
+        if border:
+            return radius, f"dome cut by the image border ({size})", border
+        return radius, f"a neighbouring dome or a step is too close to the apex ({size})", border
 
     try:
         for _ in range(config.xpander_fit_iterations):
-            radius, problem = aperture(u0, v0)
+            radius, problem, _ = aperture(u0, v0)
             if problem:
                 return _not_found(problem)
             q, _, _ = _fit(_select(z_leveled, frame, u0, v0, radius), config)
@@ -294,7 +302,7 @@ def measure_xpander(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray
                 return _not_found("apex unstable: the fitted vertex is more than half the "
                                   "aperture away from the apex")
             u0, v0 = u0 + du0 / p, v0 + dv0 / p
-        radius, problem = aperture(u0, v0)
+        radius, problem, border = aperture(u0, v0)
         if problem:
             return _not_found(problem)
         aperture_pixels = _select(z_leveled, frame, u0, v0, radius)
@@ -304,8 +312,9 @@ def measure_xpander(z_leveled: np.ndarray, frame: Frame, z_canonical: np.ndarray
         kept = np.isin(aperture_pixels.rows * width + aperture_pixels.cols,
                        ap.rows * width + ap.cols)
         dropped = _subset(aperture_pixels, ~kept)
-        return _summarise(q, ap, dropped, frame, regions, u0, v0, radius, outlier_pct, classes,
-                          config)
+        result = _summarise(q, ap, dropped, frame, regions, u0, v0, radius, outlier_pct,
+                            classes, config)
+        return replace(result, border_limited=border)
     except FitError as exc:  # e.g. a saddle-shaped fit with no unique vertex
         return _not_found(str(exc))
 

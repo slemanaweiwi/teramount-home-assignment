@@ -61,11 +61,14 @@ def geometric_flags(result: ScanResult, config: Config) -> tuple[str, ...]:
                   ((1, pv.plane1_feature_um2), (2, pv.plane2_feature_um2)) if area > 0]
     if x is not None and x.found and x.local_feature_um2 > 0:
         flags.append("xpander_local_feature")
+    # The channel axis is only known in the rotation-corrected frame: without a measured
+    # rotation, an offset from it is a limit of the analysis (a warning), not a defect.
+    axis_known = "rotation_not_measured" not in result.warnings
     for n, cross in ((1, result.cross1), (2, result.cross2)):
         off_axis = cross is not None and cross.axis_offset_um > config.max_cross_axis_offset_um
-        if off_axis and cross.found:
+        if axis_known and off_axis and cross.found:
             flags.append(f"cross{n}_off_axis")
-    if x is not None and x.found:
+    if axis_known and x is not None and x.found:
         if x.axis_offset_um > config.max_apex_axis_offset_um:
             flags.append("apex_off_axis")
     if pv is not None and pv.parallelism_deg > config.max_plane_parallelism_deg:

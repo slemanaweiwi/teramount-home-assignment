@@ -1,7 +1,19 @@
 # Teramount Home Assignment — Design
 
 Date: 2026-11-15
-Status: draft for approval
+Status: approved design, written **before** the implementation.
+
+> **Historical document.** It records the design as approved before the code was
+> written. The code, `README.md` and `ANSWERS.md` describe what was finally built
+> and are authoritative where they differ. The main differences:
+>
+> - **CSV columns:** see the README; §8 below lists the first draft.
+> - **Cross centre:** the depth-weighted centroid of the original pixels (§7.3).
+> - **Plane-fit edge margin:** 0.5 µm, not ~2 µm (§7.4).
+> - **Artefacts:** after Teramount's feedback (16 Nov), the code also handles
+>   dust spikes, dust particles, local defects, scan-line streaks and bad lines;
+>   see "Assumptions, artefacts and limits" in `ANSWERS.md`.
+> - **Repository:** later published on GitHub.
 
 ## 1. Intent and why
 
@@ -198,6 +210,7 @@ Everything is relative to the leveled base and expressed in µm.
    shape (two perpendicular arms; checked via area, bounding-box aspect and
    moment-based symmetry). Center = intersection of the two arm axes, refined to
    sub-pixel by matching a cross template / centroid of the cleaned mask.
+   *(Implemented: the depth-weighted centroid of the original pixels.)*
 5. **Xpander**: search above the pivot along the channel axis. **Updated
    after data exploration:** neighbouring Xpanders meet at gentle valleys (like
    a microlens array), not at steep edges, so a "no steep edges" region does
@@ -221,7 +234,7 @@ plane 1, plane 2, both crosses with centers, the Xpander aperture).
 ### 7.4 Pivot height difference
 
 - Robust plane fit to plane 1 and plane 2 **with the crosses and a ~2 µm edge
-  margin removed**; height difference = (plane 2 − plane 1) evaluated at the
+  margin removed** *(implemented: a 0.5 µm margin)*; height difference = (plane 2 − plane 1) evaluated at the
   plane-2 centroid (after leveling the planes should be parallel; their slope
   difference is reported as a check).
 - Uncertainty reported as the residual RMS of each plane fit.
@@ -287,6 +300,8 @@ discusses each flagged file with its diagnostic figure.
 
 ## 8. CSV schema (one row per scan)
 
+*(First draft; the final columns are listed in the README.)*
+
 `file, status, error, tilt_x_deg, tilt_y_deg, tilt_total_deg, rotation_deg,
 pivot_height_diff_um, plane1_rms_um, plane2_rms_um,
 cross1_x_px, cross1_y_px, cross1_x_um, cross1_y_um, cross2_x_px, cross2_y_px,
@@ -340,7 +355,7 @@ candidate's prompts verbatim, in order.
 - Paraboloid fit as the primary curvature method, with sphere + 1D profile
   cross-checks.
 - Markdown for README / answers.
-- Initialise a local git repository for the work (not pushed anywhere).
+- Initialise a local git repository for the work (later published on GitHub).
 
 - **Orientation range of unseen data**: assume same chip family and microscope
   (Xpander above Pivot, near-vertical channel). Fine rotation search over
