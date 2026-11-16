@@ -353,3 +353,90 @@ use the promts and inhence them to look profisinal , i used chat gpt to brain st
 ```text
 https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44, but i as i told you write the promts in more profinsinla way
 ```
+**1.** 15 Nov, 13:33 UTC
+
+```text
+hi , do you know teramount ?
+```
+
+**2.** 15 Nov, 13:37 UTC
+
+```text
+yes read the assismint and tell me what is this assigmint please
+```
+
+**3.** 15 Nov, 13:44 UTC
+
+```text
+for now install the required stuff
+```
+
+**4.** 15 Nov, 13:49 UTC
+
+```text
+yes do the design , this i want this to be profiistional and you do you maximum to give the best resutls please
+```
+
+**5.** 15 Nov, 13:51 UTC
+
+```text
+idk , iam applying for a software enginner position
+```
+
+**6.** 15 Nov, 13:51 UTC
+
+```text
+yes but read the doc first to understand what they are asking for , the code will be tested on this data set and real data set
+```
+
+**7.** 15 Nov, 14:13 UTC
+
+```text
+a few days, maybe i need to explain it idk why ? but i can use ai to solve it and use what ever i want
+```
+
+**8.** 15 Nov, 14:27 UTC
+
+```text
+i used chat gpt to review the design , he wrote me this iwhile brainstorming , 
+
+[pasted: ChatGPT's review of the design, summarised in the table above]
+
+ , what do you think about what he sees ? notice that chatgpt dies not have the assigmn he has only the design
+```
+
+**9.** 15 Nov, 14:32 UTC
+
+```text
+yes do it
+```
+
+**10.** 15 Nov, 15:40 UTC
+
+```text
+yes go with native, start building ,how much will it take ??
+```
+
+**11.** 15 Nov, 16:22 UTC
+
+```text
+how much you will take ??
+```
+
+**12.** 15 Nov, 17:06 UTC
+
+```text
+how much time left until the review finishes?
+```
+
+**13.** 15 Nov, 17:08 UTC
+
+```text
+use the promts and inhence them to look profisinal , i used chat gpt to brain storm how to solve the problem
+```
+
+**14.** 15 Nov, 17:12 UTC
+
+```text
+https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44, but i as i told you write the promts in more profinsinla way
+```
