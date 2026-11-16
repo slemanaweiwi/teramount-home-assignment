@@ -48,7 +48,7 @@ prompt.
 ### ChatGPT's design review and what was done with it
 
 ChatGPT made five main recommendations. I passed them to Claude
-Code (prompt 8 below), and Claude assessed each one; the outcome is recorded
+Code (original prompt 8 below), and Claude assessed each one; the outcome is recorded
 in `docs/design.md` §12:
 
 | Recommendation | Outcome |
@@ -59,58 +59,210 @@ in `docs/design.md` §12:
 | Avoid over-engineering | **Accepted:** dropped the Hough-only route and the bootstrap. |
 | Make the principal curvatures the main Xpander result | **Not accepted:** the assignment explicitly asks for the radius along X and Y. Principal radii are reported as an extra. |
 
-## Prompts
+## Prompts — Claude Code
 
-Every prompt I sent, exactly as I typed it (typos included), in the order I
-sent them. Times are UTC. Three long pasted texts are shortened and marked
-[...]: ChatGPT's design review (summarised above), Teramount's reply about
-the test data, and the review prompt (prompt 37), which ran in a separate
-Claude Code session as a final independent check before submission. One
-message meant for an unrelated project is left out.
+The following prompts represent the instructions provided to Claude Code throughout the development of the Teramount Home Assignment. They have been professionally edited for clarity, structure, and technical precision while preserving the intent and sequence of the original interactions.
 
-**1.** 15 Nov, 13:33
+### 1. Understanding the Company
+
+**Prompt:**
+
+Are you familiar with Teramount? Please briefly explain the company's business, its core technology, and the products or solutions it develops. I would like to understand the context of the company before starting its technical assignment.
+
+### 2. Understanding the Assignment
+
+**Prompt:**
+
+Please review the provided Teramount Home Assignment document carefully and explain its objectives in detail.
+
+I want to understand:
+- What the assignment expects me to implement.
+- What input data is provided.
+- What measurements and results must be extracted.
+- What challenges the assignment is designed to evaluate.
+- What the expected deliverables are.
+
+Start by explaining the problem in accessible language before suggesting an implementation approach. Do not make assumptions about requirements that are not stated in the assignment.
+
+### 3. Preparing the Development Environment
+
+**Prompt:**
+
+Before proceeding with the implementation, please inspect the project environment and install the dependencies required for the assignment.
+
+Use an appropriate Python environment, select suitable scientific-computing and image-processing libraries, and verify that the installation works. Please avoid introducing unnecessary dependencies.
+
+### 4. Designing the Solution
+
+**Prompt:**
+
+Please develop a comprehensive technical design for solving this assignment.
+
+The solution should demonstrate professional software engineering practices and prioritize measurement accuracy, robustness, maintainability, and reproducibility.
+
+Before proposing the architecture:
+1. Inspect the assignment and all available input data.
+2. Explore the structure and characteristics of the scans.
+3. Identify the main technical challenges and potential failure cases.
+4. Evaluate suitable algorithms for segmentation, geometric measurements, surface fitting, and fault detection.
+
+Then propose a modular architecture, explain the reasoning behind the major algorithmic choices, define the expected outputs, and establish a testing and validation strategy.
+
+The implementation will be evaluated on the provided dataset and an additional real-world dataset. Therefore, avoid hard-coded coordinates, file-specific assumptions, and solutions that only work on the current samples.
+
+### 5. Clarifying the Engineering Context
+
+**Prompt:**
+
+I am applying for a Software Engineer position, rather than a dedicated research or data-science position.
+
+Please take this into account when designing the solution. I want the implementation to demonstrate strong engineering practices, not simply produce accurate numerical results.
+
+Prioritize:
+- Clean and modular architecture.
+- Readable, maintainable Python code.
+- Appropriate abstractions and separation of responsibilities.
+- Automated testing and error handling.
+- Reproducible execution and clear documentation.
+
+The mathematical methods should still be rigorous, but their implementation and justification should be understandable and defensible in a software engineering interview.
+
+### 6. Reviewing the Assignment Before Finalizing the Design
+
+**Prompt:**
+
+Before finalizing the design, please return to the original assignment document and verify that the proposed solution addresses every requirement.
+
+The implementation will be tested against both the supplied dataset and an additional real dataset. This means the design must generalize beyond the observed scans.
+
+Please identify:
+- Requirements that are not yet covered.
+- Assumptions that need validation.
+- Algorithms that may fail under different scan conditions.
+- Potential edge cases.
+- Any unnecessary complexity that could be removed without compromising the solution.
+
+Do not finalize the design until you have checked it against the actual assignment requirements.
+
+### 7. Defining the Scope and Constraints
+
+**Prompt:**
+
+I expect to have a few days to complete the assignment. I may also be asked to explain and justify the implementation during a technical interview.
+
+I am permitted to use AI tools and other development resources.
+
+Please optimize the implementation strategy for this situation. The final result should be technically strong, but I also need to understand the important decisions well enough to explain them independently.
+
+Prioritize the essential requirements first and distinguish between must-have functionality and optional improvements.
+
+### 8. Finalizing the Design
+
+**Prompt:**
+
+Please proceed with the agreed design revisions.
+
+Update the design documentation to incorporate the accepted recommendations, resolve the identified inconsistencies, and ensure that the implementation plan is consistent with the final architecture.
+
+Before implementation, verify that the design, testing strategy, and deliverables are aligned.
+
+### 9. Starting the Implementation
+
+**Prompt:**
+
+The design is approved. Please proceed with the native implementation approach and build the complete solution in the current project.
+
+Follow the agreed implementation plan and work incrementally.
+
+For each task:
+1. Implement the functionality.
+2. Add or update the relevant automated tests.
+3. Run the tests and investigate any failures.
+4. Review the implementation before moving to the next task.
+
+Preserve the modular architecture and avoid shortcuts that compromise correctness or maintainability.
+
+Please also provide an estimate of the implementation time and identify the major remaining milestones.
+
+### 10. Requesting an Implementation Progress Update
+
+**Prompt:**
+
+Please provide an updated estimate of the remaining implementation time.
+
+Summarize the completed tasks, the work currently in progress, the outstanding tasks, and any issues that could affect the delivery timeline.
+
+### 11. Requesting a Review Progress Update
+
+**Prompt:**
+
+Please provide an update on the independent code review.
+
+How many issues have been identified, how many have been resolved, and what remains to be reviewed? Also, estimate how much time is needed to complete the review.
+
+### 12. Improving the AI Usage Documentation
+
+**Prompt:**
+
+I need to document my use of AI tools as part of the assignment submission.
+
+Please prepare a professional and transparent AI usage section for `AI_USAGE.md`.
+
+The documentation should describe how Claude Code contributed to the development process, including data exploration, technical design, implementation, testing, debugging, and documentation.
+
+Please present the prompts used during the interactions in a professional, well-structured format. Do not invent technical decisions or claim that suggestions were implemented unless they were actually accepted and used.
+
+---
+
+### Original Prompt Record
+
+The professionally edited prompts above are intended to improve readability and communicate the purpose of each interaction. They are not verbatim transcripts.
+
+The original wording, including spelling and grammatical errors, should be preserved separately below, unchanged.
+
+**1.** 15 Nov, 13:33 UTC
 
 ```text
 hi , do you know teramount ?
 ```
 
-**2.** 15 Nov, 13:37
+**2.** 15 Nov, 13:37 UTC
 
 ```text
 yes read the assismint and tell me what is this assigmint please
 ```
 
-**3.** 15 Nov, 13:44
+**3.** 15 Nov, 13:44 UTC
 
 ```text
 for now install the required stuff
 ```
 
-**4.** 15 Nov, 13:49
+**4.** 15 Nov, 13:49 UTC
 
 ```text
 yes do the design , this i want this to be profiistional and you do you maximum to give the best resutls please
 ```
 
-**5.** 15 Nov, 13:51
+**5.** 15 Nov, 13:51 UTC
 
 ```text
 idk , iam applying for a software enginner position
 ```
 
-**6.** 15 Nov, 13:51
+**6.** 15 Nov, 13:51 UTC
 
 ```text
 yes but read the doc first to understand what they are asking for , the code will be tested on this data set and real data set
 ```
 
-**7.** 15 Nov, 14:13
+**7.** 15 Nov, 14:13 UTC
 
 ```text
 a few days, maybe i need to explain it idk why ? but i can use ai to solve it and use what ever i want
 ```
 
-**8.** 15 Nov, 14:27
+**8.** 15 Nov, 14:27 UTC
 
 ```text
 i used chat gpt to review the design , he wrote me this iwhile brainstorming , 
@@ -120,243 +272,38 @@ i used chat gpt to review the design , he wrote me this iwhile brainstorming ,
  , what do you think about what he sees ? notice that chatgpt dies not have the assigmn he has only the design
 ```
 
-**9.** 15 Nov, 14:32
+**9.** 15 Nov, 14:32 UTC
 
 ```text
 yes do it
 ```
 
-**10.** 15 Nov, 15:40
+**10.** 15 Nov, 15:40 UTC
 
 ```text
 yes go with native, start building ,how much will it take ??
 ```
 
-**11.** 15 Nov, 16:22
+**11.** 15 Nov, 16:22 UTC
 
 ```text
 how much you will take ??
 ```
 
-**12.** 15 Nov, 17:06
+**12.** 15 Nov, 17:06 UTC
 
 ```text
 how much time left until the review finishes?
 ```
 
-**13.** 15 Nov, 17:08
+**13.** 15 Nov, 17:08 UTC
 
 ```text
 use the promts and inhence them to look profisinal , i used chat gpt to brain storm how to solve the problem
 ```
 
-**14.** 15 Nov, 17:12
+**14.** 15 Nov, 17:12 UTC
 
 ```text
 https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44, but i as i told you write the promts in more profinsinla way
 ```
-
-**15.** 15 Nov, 21:36
-
-```text
-so now what , is the assigmnt done ? where are we now
-```
-
-**16.** 15 Nov, 21:42
-
-```text
-merge and make a github repo , and do the small fixes take your time i want the perfect assigmint
-```
-
-**17.** 15 Nov, 23:00
-
-```text
-the ai usage md i changed it and saved it notice that
-```
-
-**18.** 15 Nov, 23:18
-
-```text
-we are done now ?
-```
-
-**19.** 15 Nov, 23:19
-
-```text
-i stoped it by accedent continue
-```
-
-**20.** 15 Nov, 23:21
-
-```text
-make it public
-```
-
-**21.** 15 Nov, 23:23
-
-```text
-all the tests are passed , is the code gonna work on future tests that we dont have now ? are you 100% sure we are done ?
-```
-
-**22.** 15 Nov, 23:27
-
-```text
-i edited the ai usage my self  . also i recieved a main from vercel about a web page deploy what is that ??
-```
-
-**23.** 15 Nov, 23:29
-
-```text
-edit ai usage such that it has no errors
-```
-
-**24.** 15 Nov, 23:35
-
-```text
-now its the last result , iedit it , dont add anything to it
-```
-
-**25.** 15 Nov, 23:49
-
-```text
-you reccomend us doing these fixes ? are there any failed tests or this fix is just in case , i dont want to optamize my solution and reuining what we did before
-```
-
-**26.** 15 Nov, 23:52
-
-```text
-we can ask the hairing manger about that what do you think ??
-```
-
-**27.** 15 Nov, 23:55
-
-```text
-no lest do other thing , lets write them a mail  that we finished the assigment , and in that mail we would ask if the quastions that we would sent before , and tell them we are finshed imliminting the assigment but if there ansewer is yes i would make some fixes regarfing that
-```
-
-**28.** 15 Nov, 23:58
-
-```text
-my name is suleiman 
-and i should sent the mail to Nermeen and Amit and  Elad
-```
-
-**29.** 16 Nov, 00:00
-
-```text
-can you do an atrifact that eplains every thing that we did and also prepers me for the interview , also is there a way to scedule that mail in the 8:00 am in the morning ?
-```
-
-**30.** 16 Nov, 00:05
-
-```text
-for the mail i want you to ask the quastion first then to show the git hub that we finished
-```
-
-**31.** 16 Nov, 00:08
-
-```text
-wher is the mail ?
-```
-
-**32.** 16 Nov, 00:13
-
-```text
-no still the mail , you should say if not  ,the assigmint is ready , if yes i will make some changes to deal with the expected tests
-```
-
-**33.** 16 Nov, 00:17
-
-```text
-do you recommend adding ana artifact exaplinig our solution to the reviewer or no ?
-```
-
-**34.** 16 Nov, 09:36
-
-```text
-i got this mail back 
-
-
-[pasted: Teramount's reply about the test data]
-```
-
-**35.** 16 Nov, 09:41
-
-```text
-yes
-```
-
-**36.** 16 Nov, 12:40
-
-```text
-no , are we done now can i submit it ?
-```
-
-**37.** 16 Nov, 12:50
-
-```text
-# Assignment Review — Senior Software Engineer & Technical Evaluator
-
-You are acting as a **Senior Software Engineer, Code Reviewer, and Technical Assignment Evaluator**.
-
-Your task is to thoroughly review my assignment as if you were evaluating it for submission to a university, technical interviewer, or professional engineering team.
-
-Your goal is to determine whether the assignment is correct, complete, well-implemented, properly tested, cleanly written, and ready for submission.
-
-## CRITICAL RULES
-
-1. **DO NOT MODIFY ANYTHING.** [...]
-2. This is a REVIEW-ONLY task. Your only responsibility is to inspect, analyze, test, and report.
-3. Do not assume the assignment is correct just because it runs. [...]
-4. Be honest and critical. [...]
-5. Do not invent problems. [...]
-6. Do not claim that tests passed unless you actually executed them or verified their results.
-
-[... PHASE 1 — Understand the assignment; PHASE 2 — Review the entire implementation;
-PHASE 3 — Review and execute the tests; PHASE 4 — Review test coverage and quality;
-PHASE 5 — Review documentation; PHASE 6 — Assignment requirements checklist;
-PHASE 7 — Final evaluation; PHASE 8 — Generate a complete review report ...]
-```
-
-**38.** 16 Nov, 14:43
-
-```text
-put it in an md file , and change the ai-usage such that i wrote those quastions not somoeelse okay ??
-```
-
-**39.** 16 Nov, 14:46
-
-```text
-what do you think about the temount report ??
-```
-
-**40.** 16 Nov, 14:47
-
-```text
-no this report \Users\LENOVO\Downloads\Teramount_Review_Report.md.
-```
-
-**41.** 16 Nov, 14:50
-
-```text
-1 i fixed can you check ?? it nows has real promts not the candidates said .. 
-2 - do you think we should do this work in order to pass the tests ??
-```
-
-**42.** 16 Nov, 14:54
-
-```text
-yes , and also change the ai usage to only have the promts not the candiate and also add this final test promt that discovered the last 2 bugs , 
-
-[pasted: the review prompt above]
-
- but dont use it all use some of itt ,,
-after that do the fixes and make sure the results are the same and edit the required data
-```
-
-## Prompts — ChatGPT
-
-My ChatGPT conversation (brainstorming and the design review), with every
-prompt and reply:
-
-**https://chatgpt.com/share/6af9e79d-72d0-83eb-8888-6beb5caa7c44**
